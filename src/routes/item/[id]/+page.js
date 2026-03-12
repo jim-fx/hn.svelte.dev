@@ -1,3 +1,6 @@
+import { fetchItem } from '$lib/hn';
+
+/** @type {import('./$types').PageLoad} */
 export async function load({ params, fetch }) {
-	return await fetch(`https://api.hnpwa.com/v0/item/${params.id}.json`).then((r) => r.json());
+	return fetchItem(params.id, fetch);
 }

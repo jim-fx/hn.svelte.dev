@@ -1,5 +1,8 @@
+import { fetchUser } from '$lib/hn';
+
 export const csr = false;
 
+/** @type {import('./$types').PageLoad} */
 export async function load({ params, fetch }) {
-	return await fetch(`https://api.hnpwa.com/v0/user/${params.name}.json`).then((r) => r.json());
+	return fetchUser(params.name, fetch);
 }

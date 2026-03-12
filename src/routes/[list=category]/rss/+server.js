@@ -1,3 +1,5 @@
+import { fetchList } from '$lib/hn';
+
 /**
  * @param {string} list
  * @param {Record<string, any>[]} items
@@ -31,14 +33,13 @@ const render = (list, items) => `<?xml version="1.0" encoding="UTF-8" ?>
 </channel>
 </rss>`;
 
-export async function GET({ params }) {
-	const list = params.list === 'top' ? 'news' : params.list === 'new' ? 'newest' : params.list;
-	const items = await fetch(`https://api.hnpwa.com/v0/${list}/1.json`).then((r) => r.json());
-	const feed = render(list, items);
+export async function GET({ params, fetch }) {
+	const { items } = await fetchList(params.list, 1, fetch);
+	const feed = render(params.list, items);
 
 	return new Response(feed, {
 		headers: {
-			'Cache-Control': `max-age=0, s-max-age=${600}`, // 10 minutes
+			'Cache-Control': `max-age=0, s-max-age=${600}`,
 			'Content-Type': 'application/rss+xml'
 		}
 	});
