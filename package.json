@@ -13,19 +13,21 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
 	},
 	"devDependencies": {
-		"@sveltejs/adapter-vercel": "^6.3.3",
-		"@sveltejs/kit": "^2.54.0",
-		"@sveltejs/vite-plugin-svelte": "^6.2.4",
+		"@sveltejs/kit": "^2.55.0",
+		"@sveltejs/vite-plugin-svelte": "^7.0.0",
 		"prettier": "^3.8.1",
 		"prettier-plugin-svelte": "^3.5.1",
-		"svelte": "^5.53.10",
+		"svelte": "^5.53.11",
 		"svelte-check": "^4.4.5",
 		"typescript": "^5.9.3",
-		"vite": "^7.3.1"
+		"vite": "^8.0.0"
 	},
 	"type": "module",
 	"packageManager": "pnpm@9.6.0",
 	"engines": {
 		"pnpm": "^9.0.0"
+	},
+	"dependencies": {
+		"@sveltejs/adapter-node": "^5.5.4"
 	}
 }
