@@ -2,18 +2,9 @@ import adapter from '@sveltejs/adapter-node';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
 /** @type {import('@sveltejs/kit').Config} */
-const config = {
-	compilerOptions: {
-		runes: true
-	},
+export default {
 	preprocess: vitePreprocess(),
 	kit: {
-		// new projects use adapter-auto by default
-		// we use adapter-vercel here to use more efficient edge serving
-		adapter: adapter({ runtime: 'edge' }),
-
-		inlineStyleThreshold: 5000
+		adapter: adapter(),
 	}
 };
-
-export default config;
