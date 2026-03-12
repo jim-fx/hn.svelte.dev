@@ -18,7 +18,49 @@ const PAGE_SIZE = 30;
  */
 function plural(n) {
 	if (n === 1) return 'a';
-	return n;
+	return String(n);
+}
+
+/**
+ * Convert a timestamp (seconds) into a relative time string
+ * @param {number} timestamp
+ * @returns {string}
+ */
+function formatTimeAgo(timestamp) {
+	const createdDate = new Date(timestamp * 1000);
+	const now = new Date();
+
+	let years = now.getFullYear() - createdDate.getFullYear();
+	let months = now.getMonth() - createdDate.getMonth();
+	let days = now.getDate() - createdDate.getDate();
+	let hours = now.getHours() - createdDate.getHours();
+	let minutes = now.getMinutes() - createdDate.getMinutes();
+
+	if (minutes < 0) {
+		minutes += 60;
+		hours--;
+	}
+	if (hours < 0) {
+		hours += 24;
+		days--;
+	}
+	if (days < 0) {
+		const prevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+		days += prevMonth.getDate();
+		months--;
+	}
+	if (months < 0) {
+		months += 12;
+		years--;
+	}
+
+	if (years > 0) return `${plural(years)} year${years > 1 ? 's' : ''} ago`;
+	if (months > 0) return `${plural(months)} month${months > 1 ? 's' : ''} ago`;
+	if (days > 0) return `${plural(days)} day${days > 1 ? 's' : ''} ago`;
+	if (hours > 0) return `${plural(hours)} hour${hours > 1 ? 's' : ''} ago`;
+	if (minutes > 0) return `${plural(minutes)} minute${minutes > 1 ? 's' : ''} ago`;
+
+	return 'just now';
 }
 
 /**
@@ -31,24 +73,13 @@ function transformItem(item) {
 
 	const domain = item.url ? new URL(item.url).hostname.replace('www.', '') : undefined;
 
-	const timeDiff = Date.now() / 1000 - item.time;
-	const minutes = Math.floor(timeDiff / 60);
-	const hours = Math.floor(minutes / 60);
-	const days = Math.floor(hours / 24);
-
-	let time_ago;
-	if (days > 0) time_ago = `${plural(days)} day${days > 1 ? 's' : ''} ago`;
-	else if (hours > 0) time_ago = `${plural(hours)} hour${hours > 1 ? 's' : ''} ago`;
-	else if (minutes > 0) time_ago = `${plural(minutes)} minute${minutes > 1 ? 's' : ''} ago`;
-	else time_ago = 'just now';
-
 	return {
 		...item,
 		domain,
 		user: item.by,
 		points: item.score ?? 0,
 		comments_count: item.descendants ?? 0,
-		time_ago,
+		time_ago: formatTimeAgo(item.time),
 		content: item.text ? `<p>${item.text}</p>` : ''
 	};
 }
@@ -61,45 +92,46 @@ function transformItem(item) {
 function transformComment(comment) {
 	if (!comment) return null;
 
-	const timeDiff = Date.now() / 1000 - comment.time;
-	const minutes = Math.floor(timeDiff / 60);
-	const hours = Math.floor(minutes / 60);
-	const days = Math.floor(hours / 24);
-
-	let time_ago;
-	if (days > 0) time_ago = `${days} day${days > 1 ? 's' : ''} ago`;
-	else if (hours > 0) time_ago = `${hours} hour${hours > 1 ? 's' : ''} ago`;
-	else if (minutes > 0) time_ago = `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
-	else time_ago = 'just now';
-
 	return {
 		...comment,
 		user: comment.by,
-		time_ago,
+		time_ago: formatTimeAgo(comment.time),
 		content: comment.text ? `<p>${comment.text}</p>` : ''
 	};
 }
 
 /**
+ * Transform a user to match frontend expectations
+ * @param {any} user
+ * @returns {any}
+ */
+function transformUser(user) {
+	if (!user) return null;
+
+	return {
+		...user,
+		created_ago: formatTimeAgo(user.created)
+	};
+}
+
+/**
  * @param {number[]} ids
- * @param {typeof fetch} fetch
  * @returns {Promise<any[]>}
  */
-export async function fetchItems(ids, fetch) {
+export async function fetchItems(ids) {
 	if (!ids?.length) return [];
 	const promises = ids
 		.slice(0, PAGE_SIZE)
-		.map((id) => fetch(`${BASE_URL}/item/${id}.json`).then((r) => r.json()));
+		.map((id) => globalThis.fetch(`${BASE_URL}/item/${id}.json`).then((r) => r.json()));
 	const items = await Promise.all(promises);
 	return items.map(transformItem);
 }
 
 /**
  * @param {number[]} ids
- * @param {typeof fetch} fetch
  * @returns {Promise<any[]>}
  */
-export async function fetchComments(ids, fetch) {
+export async function fetchComments(ids) {
 	if (!ids?.length) return [];
 	const promises = ids.map((id) => fetch(`${BASE_URL}/item/${id}.json`).then((r) => r.json()));
 	const comments = await Promise.all(promises);
@@ -108,7 +140,7 @@ export async function fetchComments(ids, fetch) {
 	// Recursively fetch children
 	for (const comment of transformed) {
 		if (comment?.kids?.length) {
-			comment.comments = await fetchComments(comment.kids, fetch);
+			comment.comments = await fetchComments(comment.kids);
 		} else {
 			comment.comments = [];
 		}
@@ -120,32 +152,30 @@ export async function fetchComments(ids, fetch) {
 /**
  * @param {string} list
  * @param {number} page
- * @param {typeof fetch} fetch
  * @returns {Promise<{list: string, page: number, items: any[]}>}
  */
-export async function fetchList(list, page, fetch) {
+export async function fetchList(list, page) {
 	const listName = listMap[list] || 'topstories';
 
 	const ids = await fetch(`${BASE_URL}/${listName}.json`).then((r) => r.json());
 	const start = (page - 1) * PAGE_SIZE;
 	const pageIds = ids.slice(start, start + PAGE_SIZE);
-	const items = await fetchItems(pageIds, fetch);
+	const items = await fetchItems(pageIds);
 
 	return { list, page, items };
 }
 
 /**
  * @param {string|number} id
- * @param {typeof fetch} fetch
  * @returns {Promise<any>}
  */
-export async function fetchItem(id, fetch) {
+export async function fetchItem(id) {
 	const item = await fetch(`${BASE_URL}/item/${id}.json`).then((r) => r.json());
 	const transformed = transformItem(item);
 
 	// Fetch comments if there are kids
 	if (transformed?.kids?.length) {
-		transformed.comments = await fetchComments(transformed.kids, fetch);
+		transformed.comments = await fetchComments(transformed.kids);
 	} else {
 		transformed.comments = [];
 	}
@@ -155,9 +185,9 @@ export async function fetchItem(id, fetch) {
 
 /**
  * @param {string} name
- * @param {typeof fetch} fetch
  * @returns {Promise<any>}
  */
-export async function fetchUser(name, fetch) {
-	return fetch(`${BASE_URL}/user/${name}.json`).then((r) => r.json());
+export async function fetchUser(name) {
+	const user = await fetch(`${BASE_URL}/user/${name}.json`).then((r) => r.json());
+	return transformUser(user);
 }

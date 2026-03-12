@@ -33,8 +33,11 @@ const render = (list, items) => `<?xml version="1.0" encoding="UTF-8" ?>
 </channel>
 </rss>`;
 
-export async function GET({ params, fetch }) {
-	const { items } = await fetchList(params.list, 1, fetch);
+/**
+ * @type {import('./$types').RequestHandler}
+ */
+export async function GET({ params }) {
+	const { items } = await fetchList(params.list, 1);
 	const feed = render(params.list, items);
 
 	return new Response(feed, {

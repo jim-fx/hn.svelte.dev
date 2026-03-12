@@ -1,27 +1,27 @@
 <script>
-	const { data } = $props();
+	const { data: user } = $props();
 </script>
 
 <svelte:head>
-	<title>{data.id} • Svelte Hacker News</title>
+	<title>{user.id} • Svelte Hacker News</title>
 </svelte:head>
 
-<h1>{data.id}</h1>
+<h1>{user.id}</h1>
 
 <div>
 	<p>
-		...joined <strong>{data.created}</strong>, and has <strong>{data.karma}</strong> karma
+		...joined <strong>{user.created_ago}</strong>, and has <strong>{user.karma}</strong> karma
 	</p>
 
 	<p>
-		<a href="https://news.ycombinator.com/submitted?id={data.id}">submissions</a> /
-		<a href="https://news.ycombinator.com/threads?id={data.id}">comments</a> /
-		<a href="https://news.ycombinator.com/favorites?id={data.id}">favourites</a>
+		<a href="https://news.ycombinator.com/submitted?id={user.id}">submissions</a> /
+		<a href="https://news.ycombinator.com/threads?id={user.id}">comments</a> /
+		<a href="https://news.ycombinator.com/favorites?id={user.id}">favourites</a>
 	</p>
 
-	{#if data.about}
+	{#if user.about}
 		<div class="about">
-			{@html '<p>' + data.about}
+			{@html '<p>' + user.about}
 		</div>
 	{/if}
 </div>

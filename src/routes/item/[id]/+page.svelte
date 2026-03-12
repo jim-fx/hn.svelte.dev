@@ -1,32 +1,32 @@
 <script>
 	import Comment from './Comment.svelte';
 
-	const { data } = $props();
+	const { data: item } = $props();
 </script>
 
 <svelte:head>
-	<title>{data.title} | Svelte Hacker News</title>
+	<title>{item.title} | Svelte Hacker News</title>
 </svelte:head>
 
 <div>
 	<article class="item">
-		<a class="main-link" href={data.url}>
-			<h1>{data.title}</h1>
-			{#if data.domain}<small>{data.domain}</small>{/if}
+		<a class="main-link" href={item.url}>
+			<h1>{item.title}</h1>
+			{#if item.domain}<small>{item.domain}</small>{/if}
 		</a>
 
 		<p class="meta">
-			{data.points} points by <a href="/user/{data.user}">{data.user}</a>
-			{data.time_ago}
+			{item.points} points by <a href="/user/{item.user}">{item.user}</a>
+			{item.time_ago}
 		</p>
 
-		{#if data.content}
-			{@html data.content}
+		{#if item.content}
+			{@html item.content}
 		{/if}
 	</article>
 
 	<div class="comments">
-		{#each data.comments as comment}
+		{#each item.comments as comment}
 			<Comment {comment} />
 		{/each}
 	</div>
