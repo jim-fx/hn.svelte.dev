@@ -1,7 +1,12 @@
-# sveltejs/sites
+# hn.svelte.dev
 
-Monorepo for [sites](sites) built with Svelte.
+A [Hacker News](https://news.ycombinator.com/) clone built with [SvelteKit](https://kit.svelte.dev/), powered by [HNPWA](https://github.com/davideast/hnpwa-api).
 
-# Note
+## Running locally
 
-If you're looking for the main Svelte site, that no longer lives in this repository. See [the `sveltejs/svelte.dev` repo](https://github.com/sveltejs/svelte.dev) instead.
+```sh
+git clone https://github.com/sveltejs/sites.git
+cd sites/hn.svelte.dev
+pnpm install
+pnpm run dev
+```
