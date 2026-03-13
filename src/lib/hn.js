@@ -12,6 +12,40 @@ const listMap = {
 
 const PAGE_SIZE = 30;
 
+// Simple in-memory cache with TTL
+/** @type {Map<string, { data: any; expires: number }>} */
+const cache = new Map();
+const CACHE_TTL = 30000; // 30 seconds
+
+/**
+ * Get cached data if available and not expired
+ * @param {string} key
+ * @returns {any | null}
+ */
+function getFromCache(key) {
+	const entry = cache.get(key);
+	if (!entry) return null;
+
+	if (Date.now() > entry.expires) {
+		cache.delete(key);
+		return null;
+	}
+
+	return entry.data;
+}
+
+/**
+ * Set data in cache with TTL
+ * @param {string} key
+ * @param {any} data
+ */
+function setCache(key, data) {
+	cache.set(key, {
+		data,
+		expires: Date.now() + CACHE_TTL
+	});
+}
+
 /**
  * @param {number} n
  * @returns {string}
@@ -133,20 +167,59 @@ export async function fetchItems(ids) {
  */
 export async function fetchComments(ids) {
 	if (!ids?.length) return [];
-	const promises = ids.map((id) => fetch(`${BASE_URL}/item/${id}.json`).then((r) => r.json()));
-	const comments = await Promise.all(promises);
-	const transformed = comments.map(transformComment);
 
-	// Recursively fetch children
-	for (const comment of transformed) {
-		if (comment?.kids?.length) {
-			comment.comments = await fetchComments(comment.kids);
-		} else {
-			comment.comments = [];
-		}
+	// Limit the depth of comments to prevent excessive recursion
+	// and reduce server load
+	const MAX_DEPTH = 3;
+
+	return fetchCommentsRecursive(ids, 0, MAX_DEPTH);
+}
+
+/**
+ * Recursive comment fetching with depth limit
+ * @param {number[]} ids
+ * @param {number} depth
+ * @param {number} maxDepth
+ * @returns {Promise<any[]>}
+ */
+async function fetchCommentsRecursive(ids, depth, maxDepth) {
+	if (!ids?.length || depth >= maxDepth) {
+		return [];
 	}
 
-	return transformed;
+	const promises = ids.map(async (id) => {
+		const cacheKey = `comment:${id}`;
+
+		// Try to get comment from cache
+		const cached = getFromCache(cacheKey);
+		if (cached) {
+			return cached;
+		}
+
+		try {
+			const response = await fetch(`${BASE_URL}/item/${id}.json`);
+			const comment = await response.json();
+			const transformed = transformComment(comment);
+
+			// Recursively fetch children if depth allows
+			if (transformed?.kids?.length && depth < maxDepth - 1) {
+				transformed.comments = await fetchCommentsRecursive(transformed.kids, depth + 1, maxDepth);
+			} else {
+				transformed.comments = [];
+			}
+
+			// Cache the comment
+			setCache(cacheKey, transformed);
+
+			return transformed;
+		} catch (error) {
+			// Return null for failed fetches
+			return null;
+		}
+	});
+
+	const comments = await Promise.all(promises);
+	return comments.filter(Boolean);
 }
 
 /**
@@ -156,8 +229,18 @@ export async function fetchComments(ids) {
  */
 export async function fetchList(list, page) {
 	const listName = listMap[list] || 'topstories';
+	const cacheKey = `list:${listName}`;
 
-	const ids = await fetch(`${BASE_URL}/${listName}.json`).then((r) => r.json());
+	// Try to get IDs from cache
+	let ids = getFromCache(cacheKey);
+
+	if (!ids) {
+		// Fetch fresh data
+		const response = await fetch(`${BASE_URL}/${listName}.json`);
+		ids = await response.json();
+		setCache(cacheKey, ids);
+	}
+
 	const start = (page - 1) * PAGE_SIZE;
 	const pageIds = ids.slice(start, start + PAGE_SIZE);
 	const items = await fetchItems(pageIds);
@@ -170,6 +253,14 @@ export async function fetchList(list, page) {
  * @returns {Promise<any>}
  */
 export async function fetchItem(id) {
+	const cacheKey = `item:${id}`;
+
+	// Try to get item from cache
+	const cached = getFromCache(cacheKey);
+	if (cached) {
+		return cached;
+	}
+
 	const item = await fetch(`${BASE_URL}/item/${id}.json`).then((r) => r.json());
 	const transformed = transformItem(item);
 
@@ -180,6 +271,9 @@ export async function fetchItem(id) {
 		transformed.comments = [];
 	}
 
+	// Cache the transformed item
+	setCache(cacheKey, transformed);
+
 	return transformed;
 }
 
@@ -188,6 +282,19 @@ export async function fetchItem(id) {
  * @returns {Promise<any>}
  */
 export async function fetchUser(name) {
+	const cacheKey = `user:${name}`;
+
+	// Try to get user from cache
+	const cached = getFromCache(cacheKey);
+	if (cached) {
+		return cached;
+	}
+
 	const user = await fetch(`${BASE_URL}/user/${name}.json`).then((r) => r.json());
-	return transformUser(user);
+	const transformed = transformUser(user);
+
+	// Cache the transformed user
+	setCache(cacheKey, transformed);
+
+	return transformed;
 }
