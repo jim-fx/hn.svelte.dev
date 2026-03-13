@@ -1,3 +1,5 @@
+import { getFromCache, setCache } from './cache.js';
+
 const BASE_URL = 'https://hacker-news.firebaseio.com/v0';
 
 /** @type {Record<string, string>} */
@@ -11,40 +13,6 @@ const listMap = {
 };
 
 const PAGE_SIZE = 30;
-
-// Simple in-memory cache with TTL
-/** @type {Map<string, { data: any; expires: number }>} */
-const cache = new Map();
-const CACHE_TTL = 30000; // 30 seconds
-
-/**
- * Get cached data if available and not expired
- * @param {string} key
- * @returns {any | null}
- */
-function getFromCache(key) {
-	const entry = cache.get(key);
-	if (!entry) return null;
-
-	if (Date.now() > entry.expires) {
-		cache.delete(key);
-		return null;
-	}
-
-	return entry.data;
-}
-
-/**
- * Set data in cache with TTL
- * @param {string} key
- * @param {any} data
- */
-function setCache(key, data) {
-	cache.set(key, {
-		data,
-		expires: Date.now() + CACHE_TTL
-	});
-}
 
 /**
  * @param {number} n
@@ -158,6 +126,7 @@ export async function fetchItems(ids) {
 		.slice(0, PAGE_SIZE)
 		.map((id) => globalThis.fetch(`${BASE_URL}/item/${id}.json`).then((r) => r.json()));
 	const items = await Promise.all(promises);
+	console.log({items})
 	return items.map(transformItem);
 }
 
@@ -200,6 +169,7 @@ async function fetchCommentsRecursive(ids, depth, maxDepth) {
 			const response = await fetch(`${BASE_URL}/item/${id}.json`);
 			const comment = await response.json();
 			const transformed = transformComment(comment);
+			console.log({ transformed });
 
 			// Recursively fetch children if depth allows
 			if (transformed?.kids?.length && depth < maxDepth - 1) {
