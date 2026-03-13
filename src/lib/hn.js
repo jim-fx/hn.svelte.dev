@@ -13,6 +13,8 @@ const listMap = {
 };
 
 const PAGE_SIZE = 30;
+const LIST_CACHE_TTL = 60 * 1000; // 60 seconds for list IDs
+const ITEM_CACHE_TTL = 5 * 60 * 1000; // 5 minutes for individual items
 
 /**
  * @param {number} n
@@ -126,7 +128,6 @@ export async function fetchItems(ids) {
 		.slice(0, PAGE_SIZE)
 		.map((id) => globalThis.fetch(`${BASE_URL}/item/${id}.json`).then((r) => r.json()));
 	const items = await Promise.all(promises);
-	console.log({items})
 	return items.map(transformItem);
 }
 
@@ -169,7 +170,6 @@ async function fetchCommentsRecursive(ids, depth, maxDepth) {
 			const response = await fetch(`${BASE_URL}/item/${id}.json`);
 			const comment = await response.json();
 			const transformed = transformComment(comment);
-			console.log({ transformed });
 
 			// Recursively fetch children if depth allows
 			if (transformed?.kids?.length && depth < maxDepth - 1) {
@@ -179,7 +179,7 @@ async function fetchCommentsRecursive(ids, depth, maxDepth) {
 			}
 
 			// Cache the comment
-			setCache(cacheKey, transformed);
+			setCache(cacheKey, transformed, ITEM_CACHE_TTL);
 
 			return transformed;
 		} catch (error) {
@@ -208,7 +208,7 @@ export async function fetchList(list, page) {
 		// Fetch fresh data
 		const response = await fetch(`${BASE_URL}/${listName}.json`);
 		ids = await response.json();
-		setCache(cacheKey, ids);
+		setCache(cacheKey, ids, LIST_CACHE_TTL);
 	}
 
 	const start = (page - 1) * PAGE_SIZE;

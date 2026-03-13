@@ -5,10 +5,16 @@ export async function load({ params, setHeaders, depends }) {
 	const list = params.list;
 	const page = +params.page;
 
-	// Cache for 60 seconds in browser and CDN
-	// Allow stale-while-revalidate for 10 seconds
+	// Cache for 60 seconds in browser, longer at Cloudflare edge
+	// Allow stale-while-revalidate for 60 seconds (serve stale content while revalidating in background)
 	setHeaders({
-		'cache-control': 'public, max-age=60, stale-while-revalidate=10'
+		'cache-control': 'public, max-age=60, stale-while-revalidate=60',
+		// Cloudflare-specific: longer cache at edge, respects this over cache-control
+		'cdn-cache-control': 'public, max-age=60, stale-while-revalidate=300',
+		// Cache tag for manual purging via Cloudflare API
+		'cache-tag': `hn-${list},hn-${list}-page-${page}`,
+		// Intermediate proxy caches
+		'surrogate-control': 'public, max-age=300'
 	});
 
 	// Track dependencies for cache invalidation

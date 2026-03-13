@@ -26,18 +26,19 @@ db.exec(`
 		key TEXT PRIMARY KEY,
 		data TEXT NOT NULL,
 		created_at INTEGER NOT NULL,
-		updated_at INTEGER NOT NULL
+		updated_at INTEGER NOT NULL,
+		expires_at INTEGER
 	)
 `);
 
 /**
- * Get cached data if available
+ * Get cached data if available and not expired
  * @param {string} key
  * @returns {any | null}
  */
 export function getFromCache(key) {
 	try {
-		const stmt = db.prepare('SELECT data FROM cache WHERE key = ?');
+		const stmt = db.prepare('SELECT data, expires_at FROM cache WHERE key = ?');
 		const result = stmt.get(key);
 
 		if (
@@ -46,6 +47,10 @@ export function getFromCache(key) {
 			'data' in result &&
 			typeof result.data === 'string'
 		) {
+			const expiresAt = result.expires_at;
+			if (expiresAt && Date.now() > expiresAt) {
+				return null;
+			}
 			return JSON.parse(result.data);
 		}
 	} catch (error) {
@@ -59,18 +64,20 @@ export function getFromCache(key) {
  * Set data in cache
  * @param {string} key
  * @param {any} data
+ * @param {number} ttlMs - Time to live in milliseconds (optional)
  */
-export function setCache(key, data) {
+export function setCache(key, data, ttlMs = 0) {
 	try {
 		const now = Date.now();
+		const expiresAt = ttlMs ? now + ttlMs : null;
 		const serializedData = JSON.stringify(data);
 
 		const stmt = db.prepare(`
-			INSERT OR REPLACE INTO cache (key, data, created_at, updated_at)
-			VALUES (?, ?, COALESCE((SELECT created_at FROM cache WHERE key = ?), ?), ?)
+			INSERT OR REPLACE INTO cache (key, data, created_at, updated_at, expires_at)
+			VALUES (?, ?, COALESCE((SELECT created_at FROM cache WHERE key = ?), ?), ?, ?)
 		`);
 
-		stmt.run(key, serializedData, key, now, now);
+		stmt.run(key, serializedData, key, now, now, expiresAt);
 	} catch (error) {
 		console.error('Cache write error:', error);
 	}
