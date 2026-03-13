@@ -1,4 +1,4 @@
-import { fetchList } from '$lib/hn';
+import { fetchList, fetchItem } from '$lib/hn';
 
 /** @type {import('@sveltejs/kit').Handle} */
 export async function handle({ event, resolve }) {
@@ -31,14 +31,39 @@ function startCacheWarmer() {
 }
 
 /**
- * Pre-warm the cache for the top list
+ * Pre-warm the cache for the top list and its stories
  * Runs asynchronously without blocking the request
  */
 async function warmTopListCache() {
 	try {
 		// Fetch top list to populate cache
-		// This will be cached in the server-side cache
-		await fetchList('top', 1);
+		const result = await fetchList('top', 1);
+
+		// Fetch and cache the top 5 stories (including their comments)
+		// This ensures the most popular stories are pre-cached
+		const storiesToCache = result.items.slice(0, 5);
+
+		// Parallel fetch of stories to populate their cache
+		await Promise.all(
+			storiesToCache.map(async (story) => {
+				if (story?.id) {
+					try {
+						// Fetch story with comments (recursively)
+						// This will populate the cache for the story itself
+						// and limit recursion depth in hn.js
+						await fetchItem(story.id);
+					} catch (err) {
+						// Individual story cache warming can fail silently
+						console.error(
+							`Cache warming failed for story ${story.id}:`,
+							err instanceof Error ? err.message : String(err)
+						);
+					}
+				}
+			})
+		);
+
+		console.log('Cache warming completed for top list and top 5 stories');
 	} catch (error) {
 		// Silently fail - cache warming should not affect the user experience
 		console.error('Cache warming failed:', error);
