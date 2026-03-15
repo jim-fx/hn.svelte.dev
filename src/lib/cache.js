@@ -48,7 +48,7 @@ export function getFromCache(key) {
 			typeof result.data === 'string'
 		) {
 			const expiresAt = result.expires_at;
-			if (expiresAt && Date.now() > expiresAt) {
+			if (expiresAt && Date.now() > Number(expiresAt)) {
 				return null;
 			}
 			return JSON.parse(result.data);

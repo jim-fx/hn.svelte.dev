@@ -16,6 +16,71 @@ const PAGE_SIZE = 30;
 const LIST_CACHE_TTL = 60 * 1000; // 60 seconds for list IDs
 const ITEM_CACHE_TTL = 5 * 60 * 1000; // 5 minutes for individual items
 
+// Batch fetching configuration
+const BATCH_SIZE = 20;
+const BATCH_DELAY_MS = 50; // Small delay between batches to avoid rate limiting
+const REQUEST_TIMEOUT_MS = 5000; // 5 second timeout per request
+
+/**
+ * Fetch with timeout and error handling
+ * @param {string} url
+ * @param {number} timeout
+ * @returns {Promise<any>}
+ */
+async function fetchWithTimeout(url, timeout = REQUEST_TIMEOUT_MS) {
+	const controller = new AbortController();
+	const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+	try {
+		const response = await fetch(url, { signal: controller.signal });
+		clearTimeout(timeoutId);
+
+		if (!response.ok) {
+			throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+		}
+
+		return response.json();
+	} catch (error) {
+		clearTimeout(timeoutId);
+		throw error;
+	}
+}
+
+/**
+ * Fetch items in batches to avoid overwhelming the API
+ * @param {number[]} ids
+ * @param {number} batchSize
+ * @returns {Promise<any[]>}
+ */
+async function fetchInBatches(ids, batchSize = BATCH_SIZE) {
+	const results = [];
+
+	for (let i = 0; i < ids.length; i += batchSize) {
+		const batch = ids.slice(i, i + batchSize);
+
+		// Fetch current batch in parallel
+		const batchPromises = batch.map((id) =>
+			fetchWithTimeout(`${BASE_URL}/item/${id}.json`).catch((error) => {
+				console.error(
+					`Failed to fetch item ${id}:`,
+					error instanceof Error ? error.message : String(error)
+				);
+				return null; // Return null for failed fetches
+			})
+		);
+
+		const batchResults = await Promise.all(batchPromises);
+		results.push(...batchResults.filter((result) => result !== null));
+
+		// Small delay between batches to avoid rate limiting
+		if (i + batchSize < ids.length) {
+			await new Promise((resolve) => setTimeout(resolve, BATCH_DELAY_MS));
+		}
+	}
+
+	return results;
+}
+
 /**
  * @param {number} n
  * @returns {string}
@@ -124,10 +189,9 @@ function transformUser(user) {
  */
 export async function fetchItems(ids) {
 	if (!ids?.length) return [];
-	const promises = ids
-		.slice(0, PAGE_SIZE)
-		.map((id) => globalThis.fetch(`${BASE_URL}/item/${id}.json`).then((r) => r.json()));
-	const items = await Promise.all(promises);
+
+	const limitedIds = ids.slice(0, PAGE_SIZE);
+	const items = await fetchInBatches(limitedIds);
 	return items.map(transformItem);
 }
 
@@ -157,39 +221,61 @@ async function fetchCommentsRecursive(ids, depth, maxDepth) {
 		return [];
 	}
 
-	const promises = ids.map(async (id) => {
-		const cacheKey = `comment:${id}`;
+	// Limit concurrent comment fetches to avoid overwhelming the API
+	const CONCURRENT_COMMENTS = 5;
+	const limitedIds = ids.slice(0, 200); // Max 200 comments per level
 
-		// Try to get comment from cache
-		const cached = getFromCache(cacheKey);
-		if (cached) {
-			return cached;
-		}
+	const comments = [];
 
-		try {
-			const response = await fetch(`${BASE_URL}/item/${id}.json`);
-			const comment = await response.json();
-			const transformed = transformComment(comment);
+	// Process comments in chunks to control concurrency
+	for (let i = 0; i < limitedIds.length; i += CONCURRENT_COMMENTS) {
+		const chunk = limitedIds.slice(i, i + CONCURRENT_COMMENTS);
 
-			// Recursively fetch children if depth allows
-			if (transformed?.kids?.length && depth < maxDepth - 1) {
-				transformed.comments = await fetchCommentsRecursive(transformed.kids, depth + 1, maxDepth);
-			} else {
-				transformed.comments = [];
+		const chunkPromises = chunk.map(async (id) => {
+			const cacheKey = `comment:${id}`;
+
+			// Try to get comment from cache
+			const cached = getFromCache(cacheKey);
+			if (cached) {
+				return cached;
 			}
 
-			// Cache the comment
-			setCache(cacheKey, transformed, ITEM_CACHE_TTL);
+			try {
+				const comment = await fetchWithTimeout(`${BASE_URL}/item/${id}.json`);
+				const transformed = transformComment(comment);
 
-			return transformed;
-		} catch (error) {
-			// Return null for failed fetches
-			return null;
-		}
-	});
+				if (!transformed) return null;
 
-	const comments = await Promise.all(promises);
-	return comments.filter(Boolean);
+				// Recursively fetch children if depth allows
+				if (transformed?.kids?.length && depth < maxDepth - 1) {
+					transformed.comments = await fetchCommentsRecursive(
+						transformed.kids,
+						depth + 1,
+						maxDepth
+					);
+				} else {
+					transformed.comments = [];
+				}
+
+				// Cache the comment
+				setCache(cacheKey, transformed, ITEM_CACHE_TTL);
+
+				return transformed;
+			} catch (error) {
+				// Log error but continue with other comments
+				console.error(
+					`Failed to fetch comment ${id}:`,
+					error instanceof Error ? error.message : String(error)
+				);
+				return null;
+			}
+		});
+
+		const chunkComments = await Promise.all(chunkPromises);
+		comments.push(...chunkComments.filter(Boolean));
+	}
+
+	return comments;
 }
 
 /**
@@ -233,6 +319,8 @@ export async function fetchItem(id) {
 
 	const item = await fetch(`${BASE_URL}/item/${id}.json`).then((r) => r.json());
 	const transformed = transformItem(item);
+
+	if (!transformed) return null;
 
 	// Fetch comments if there are kids
 	if (transformed?.kids?.length) {
