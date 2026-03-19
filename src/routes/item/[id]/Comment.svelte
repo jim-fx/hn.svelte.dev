@@ -5,7 +5,7 @@
 	 * @typedef {object} CommentData
 	 * @property {boolean} [deleted]
 	 * @property {string} user
-	 * @property {number} time_ago
+	 * @property {string} time_ago
 	 * @property {string} content
 	 * @property {CommentData[]} comments
 	 */
@@ -93,6 +93,10 @@
 
 	a {
 		color: var(--fg-light);
+	}
+
+	.body {
+		padding-bottom: 5px;
 	}
 
 	/* prevent crazy overflow layout bug on mobile */

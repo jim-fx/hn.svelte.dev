@@ -1,4 +1,4 @@
-import { fetchList } from '$lib/hn';
+import { fetchList } from '$lib/hn.js';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ params, setHeaders, depends }) {
