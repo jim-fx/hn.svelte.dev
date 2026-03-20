@@ -136,6 +136,15 @@ export function setupDatabase() {
 	// Ensure schema exists.
 	db.exec(CREATE_TABLE_SQL);
 
+	// Create indices for common query patterns.
+	db.exec(`
+		CREATE INDEX IF NOT EXISTS idx_items_type ON items(type);
+		CREATE INDEX IF NOT EXISTS idx_items_by ON items(by);
+		CREATE INDEX IF NOT EXISTS idx_items_time ON items(time DESC);
+		CREATE INDEX IF NOT EXISTS idx_items_parent ON items(parent);
+		CREATE INDEX IF NOT EXISTS idx_items_score ON items(score DESC);
+	`);
+
 	upsertStatement = db.prepare(UPSERT_SQL);
 	selectStatement = db.prepare(SELECT_SQL);
 	console.log('[db] setup tables');
