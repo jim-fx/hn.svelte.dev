@@ -1,4 +1,5 @@
 export type ItemType = "job" | "story" | "comment" | "poll" | "pollopt";
+export type StoryType = 'top' | 'new' | 'best' | 'ask' | 'show' | 'jobs';
 
 export type Item = {
   id: number;

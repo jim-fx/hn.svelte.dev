@@ -48,6 +48,14 @@ CREATE TABLE IF NOT EXISTS items (
 )
 `;
 
+const CREATE_RAW_CACHE_SQL = `
+CREATE TABLE IF NOT EXISTS raw_cache (
+  path        TEXT PRIMARY KEY,
+  data        TEXT NOT NULL,
+  cached_at   INTEGER NOT NULL
+)
+`;
+
 const UPSERT_SQL = `
 INSERT INTO items (
   id, type, by, time, text, dead, parent, poll,
@@ -75,6 +83,8 @@ ON CONFLICT(id) DO UPDATE SET
 `;
 
 const SELECT_SQL = `SELECT * FROM items WHERE id = :id`;
+const UPSERT_RAW_SQL = `INSERT INTO raw_cache (path, data, cached_at) VALUES (:path, :data, :cached_at) ON CONFLICT(path) DO UPDATE SET data = excluded.data, cached_at = excluded.cached_at`;
+const SELECT_RAW_SQL = `SELECT * FROM raw_cache WHERE path = :path`;
 
 function serialise(item: Item): Record<string, SQLInputValue> {
 	return {
@@ -123,20 +133,20 @@ function deserialise(row: Record<string, SQLOutputValue | undefined>) {
 
 let upsertStatement: StatementSync;
 let selectStatement: StatementSync;
+let upsertRawStatement: StatementSync;
+let selectRawStatement: StatementSync;
 
 let setup = false;
 export function setupDatabase() {
 	if (setup) return;
 	setup = true;
 	const db = getDatabase();
-	// Performance settings.
 	db.exec('PRAGMA journal_mode = WAL');
 	db.exec('PRAGMA synchronous  = NORMAL');
 
-	// Ensure schema exists.
 	db.exec(CREATE_TABLE_SQL);
+	db.exec(CREATE_RAW_CACHE_SQL);
 
-	// Create indices for common query patterns.
 	db.exec(`
 		CREATE INDEX IF NOT EXISTS idx_items_type ON items(type);
 		CREATE INDEX IF NOT EXISTS idx_items_by ON items(by);
@@ -147,6 +157,8 @@ export function setupDatabase() {
 
 	upsertStatement = db.prepare(UPSERT_SQL);
 	selectStatement = db.prepare(SELECT_SQL);
+	upsertRawStatement = db.prepare(UPSERT_RAW_SQL);
+	selectRawStatement = db.prepare(SELECT_RAW_SQL);
 }
 
 export function getItem(id: number) {
@@ -155,6 +167,18 @@ export function getItem(id: number) {
 }
 
 export function storeItem(item: Item) {
-  if(!item) return;
+	if (!item) return;
 	return upsertStatement.run(serialise(item));
+}
+
+export function getRawCache(path: string): { data: unknown; cached_at: Date } | undefined {
+	const row = selectRawStatement.get({ path }) as
+		| { path: string; data: string; cached_at: number }
+		| undefined;
+	if (!row) return undefined;
+	return { data: JSON.parse(row.data), cached_at: new Date(row.cached_at) };
+}
+
+export function storeRawCache(path: string, data: unknown) {
+	return upsertRawStatement.run({ path, data: JSON.stringify(data), cached_at: Date.now() });
 }

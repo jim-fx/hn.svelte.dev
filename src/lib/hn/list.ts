@@ -1,0 +1,60 @@
+import { getRawCache, storeRawCache } from "./cache";
+import { fetchItemsWithComments } from "./comments";
+import { HN_BASE_URL, STALE_MS } from "./constants";
+import { fetchItems } from "./item";
+import type { StoryType } from "./types";
+import { withRetry } from "./utils";
+
+export async function fetchRaw(path: string) {
+	const cached = getRawCache(path);
+	if (cached !== undefined) {
+		const isStale = Date.now() - cached.cached_at.getTime() > STALE_MS;
+		if (isStale) {
+			const url = `${HN_BASE_URL}${path}`;
+			withRetry(() => fetch(url), { retries: 3, delay: 500 })
+				.then((r) => r.json())
+				.then((data) => storeRawCache(path, data))
+				.catch(() => {});
+		}
+		return cached.data as ReturnType<typeof response.json>;
+	}
+
+	const url = `${HN_BASE_URL}${path}`;
+	const response = await withRetry(() => fetch(url), { retries: 3, delay: 500 });
+	if (!response.ok) {
+		throw new Error(`HN API error ${response.status} ${response.statusText} — ${url}`);
+	}
+	const data = await response.json();
+	storeRawCache(path, data);
+	return data;
+}
+
+export async function fetchListIds(list: StoryType) {
+	const path = `/${list}stories.json`;
+	return fetchRaw(path);
+}
+
+export async function fetchRecentPosts() {
+	const ids = await fetchRaw('/topstories.json');
+	const items = await fetchItems(ids);
+	return items.filter((item) => item !== null && !item.dead && !item.deleted);
+}
+
+
+export async function fetchList(list: StoryType, page = 1, perPage = 30) {
+	const start = (page - 1) * perPage;
+	const end = start + perPage;
+
+	const allIds = await fetchListIds(list);
+	const pageIds = allIds.slice(start, end);
+	const items = await fetchItemsWithComments(pageIds);
+
+	const filtered = items.filter((item) => item !== null && !item.dead && !item.deleted);
+
+	return {
+		items: filtered,
+		page,
+		perPage,
+		total: allIds.length
+	};
+}
