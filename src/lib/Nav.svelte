@@ -26,6 +26,8 @@
 		color: var(--fg-light);
 		font-weight: 300;
 		padding: 0 1em;
+		max-width: 56em;
+    margin: 0 auto;
 	}
 
 	.icon {
