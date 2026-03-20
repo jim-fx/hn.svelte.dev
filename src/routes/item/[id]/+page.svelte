@@ -1,7 +1,9 @@
 <script>
 	import Comment from './Comment.svelte';
-	const { data:item } = $props();
-	const domain = $derived(new URL(item.url??"").hostname);
+	import { timeToReadable } from '$lib/utils';
+	const { data: item } = $props();
+	const domain = $derived(new URL(item.url ?? '').hostname);
+	const timeAgo = $derived(item.time ? timeToReadable(item.time) : '');
 </script>
 
 <svelte:head>
@@ -17,7 +19,7 @@
 
 		<p class="meta">
 			{item.score} points by <a href="/user/{item.by}">{item.by}</a>
-			{item.time}
+			{timeAgo}
 		</p>
 
 		{#if item.text}

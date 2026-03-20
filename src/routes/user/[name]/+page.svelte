@@ -1,5 +1,7 @@
 <script>
+	import { timeToReadable } from '$lib/utils';
 	const { data: user } = $props();
+	const createdAgo = $derived(user.created ? timeToReadable(user.created) : '');
 </script>
 
 <svelte:head>
@@ -10,7 +12,7 @@
 
 <div>
 	<p>
-		...joined <strong>{user.created_ago}</strong>, and has <strong>{user.karma}</strong> karma
+		...joined <strong>{createdAgo}</strong>, and has <strong>{user.karma}</strong> karma
 	</p>
 
 	<p>

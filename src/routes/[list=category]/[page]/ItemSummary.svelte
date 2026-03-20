@@ -1,8 +1,10 @@
 <script lang="ts">
-	import type { Item } from "$lib/hn";
+	import type { Item } from '$lib/hn';
+	import { timeToReadable } from '$lib/utils';
 
-	const { item, index } = $props<{item: Item, index:number}>();
-	const domain = $derived(item.url ? new URL(item.url)?.hostname: "");
+	const { item, index } = $props<{ item: Item; index: number }>();
+	const domain = $derived(item.url ? new URL(item.url)?.hostname : '');
+	const timeAgo = $derived(item.time ? timeToReadable(item.time) : '');
 </script>
 
 <article>
@@ -14,12 +16,12 @@
 	</h2>
 
 	{#if item.type === 'job'}
-		<p>{item.time_ago}</p>
+		<p>{timeAgo}</p>
 	{:else}
 		<p>
 			{item.score} points by
 			<a href="/user/{item.user}">{item.by}</a>
-			{item.time_ago}
+			{timeAgo}
 			|
 			<a href="/item/{item.id}">
 				{item.comments?.length}

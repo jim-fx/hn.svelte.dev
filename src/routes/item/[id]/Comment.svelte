@@ -1,7 +1,9 @@
 <script lang="ts">
-  import type { Comment } from '$lib/hn';
+	import type { Comment } from '$lib/hn';
+	import { timeToReadable } from '$lib/utils';
 	import CommentEl from './Comment.svelte';
-	const { comment } = $props<{comment:Comment}>();
+	const { comment } = $props<{ comment: Comment }>();
+	const timeAgo = $derived(comment.time ? timeToReadable(comment.time) : '');
 </script>
 
 {#if !comment.deleted}
@@ -11,7 +13,7 @@
 				<div class="meta-bar" role="button" tabindex="0">
 					<span class="meta">
 						<a href="/user/{comment.by}">{comment.by}</a>
-						{comment.time_ago}
+						{timeAgo}
 					</span>
 				</div>
 			</summary>

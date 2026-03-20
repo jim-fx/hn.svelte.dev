@@ -147,7 +147,6 @@ export function setupDatabase() {
 
 	upsertStatement = db.prepare(UPSERT_SQL);
 	selectStatement = db.prepare(SELECT_SQL);
-	console.log('[db] setup tables');
 }
 
 export function getItem(id: number) {
@@ -156,5 +155,6 @@ export function getItem(id: number) {
 }
 
 export function storeItem(item: Item) {
+  if(!item) return;
 	return upsertStatement.run(serialise(item));
 }
