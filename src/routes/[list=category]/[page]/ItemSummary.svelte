@@ -1,28 +1,15 @@
-<script>
-	/**
-	 * @type {{
-	 *   item: {
-	 *     domain?: string;
-	 *     id: string;
-	 *     url: string;
-	 *     title: string;
-	 *     type: string;
-	 *     time_ago: string;
-	 *     points: number;
-	 *     user: string;
-	 *     comments_count: number;
-	 *   };
-	 *   index: number;
-	 * }}
-	 */
-	const { item, index } = $props();
+<script lang="ts">
+	import type { Item } from "$lib/hn";
+
+	const { item, index } = $props<{item: Item, index:number}>();
+	const domain = $derived(item.url ? new URL(item.url)?.hostname: "");
 </script>
 
 <article>
 	<h2>
 		<a href={item.domain ? item.url : `/item/${item.id}`}>
 			{item.title}
-			{#if item.domain}<small>({item.domain})</small>{/if}
+			{#if domain}<small>({domain})</small>{/if}
 		</a>
 	</h2>
 
@@ -30,13 +17,13 @@
 		<p>{item.time_ago}</p>
 	{:else}
 		<p>
-			{item.points} points by
-			<a href="/user/{item.user}">{item.user}</a>
+			{item.score} points by
+			<a href="/user/{item.user}">{item.by}</a>
 			{item.time_ago}
 			|
 			<a href="/item/{item.id}">
-				{item.comments_count}
-				{item.comments_count === 1 ? 'comment' : 'comments'}
+				{item.comments?.length}
+				{item.comments?.length === 1 ? 'comment' : 'comments'}
 			</a>
 		</p>
 	{/if}

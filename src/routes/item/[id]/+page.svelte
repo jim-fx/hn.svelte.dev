@@ -1,7 +1,7 @@
 <script>
 	import Comment from './Comment.svelte';
-
-	const { data: item } = $props();
+	const { data:item } = $props();
+	const domain = $derived(new URL(item.url??"").hostname);
 </script>
 
 <svelte:head>
@@ -12,16 +12,16 @@
 	<article class="item">
 		<a class="main-link" href={item.url}>
 			<h1>{item.title}</h1>
-			{#if item.domain}<small>{item.domain}</small>{/if}
+			{#if domain}<small>{domain}</small>{/if}
 		</a>
 
 		<p class="meta">
-			{item.points} points by <a href="/user/{item.user}">{item.user}</a>
-			{item.time_ago}
+			{item.score} points by <a href="/user/{item.by}">{item.by}</a>
+			{item.time}
 		</p>
 
-		{#if item.content}
-			{@html item.content}
+		{#if item.text}
+			{@html item.text}
 		{/if}
 	</article>
 

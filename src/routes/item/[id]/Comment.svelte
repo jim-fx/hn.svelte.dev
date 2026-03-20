@@ -1,17 +1,7 @@
-<script>
-	import Comment from './Comment.svelte';
-
-	/**
-	 * @typedef {object} CommentData
-	 * @property {boolean} [deleted]
-	 * @property {string} user
-	 * @property {string} time_ago
-	 * @property {string} content
-	 * @property {CommentData[]} comments
-	 */
-
-	/** @type {{ comment: CommentData }} */
-	const { comment } = $props();
+<script lang="ts">
+  import type { Comment } from '$lib/hn';
+	import CommentEl from './Comment.svelte';
+	const { comment } = $props<{comment:Comment}>();
 </script>
 
 {#if !comment.deleted}
@@ -20,20 +10,20 @@
 			<summary>
 				<div class="meta-bar" role="button" tabindex="0">
 					<span class="meta">
-						<a href="/user/{comment.user}">{comment.user}</a>
+						<a href="/user/{comment.by}">{comment.by}</a>
 						{comment.time_ago}
 					</span>
 				</div>
 			</summary>
 
 			<div class="body">
-				{@html comment.content}
+				{@html comment.text}
 			</div>
 
 			{#if comment.comments.length > 0}
 				<ul class="children">
 					{#each comment.comments as child}
-						<li><Comment comment={child} /></li>
+						<li><CommentEl comment={child} /></li>
 					{/each}
 				</ul>
 			{/if}

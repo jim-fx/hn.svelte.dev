@@ -1,8 +1,10 @@
-import { fetchList } from '$lib/hn.js';
+import * as hn from '$lib/hn';
 
-/** @type {import('./$types').PageServerLoad} */
 export async function load({ params, setHeaders, depends }) {
-	const list = params.list;
+
+	hn.setupDatabase();
+
+	const list = params.list as hn.StoryType;
 	const page = +params.page;
 
 	// Cache for 60 seconds in browser, longer at Cloudflare edge
@@ -21,5 +23,8 @@ export async function load({ params, setHeaders, depends }) {
 	// Using a custom key that includes the list and page
 	depends(`hn:list:${list}:${page}`);
 
-	return fetchList(list, page);
+	return {
+    list,
+    ... await hn.fetchList(list, page),
+  }
 }
