@@ -21,6 +21,10 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
+# Install curl
+RUN apt-get update && apt-get install -y curl \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN npm install -g pnpm@latest
 
 COPY --from=builder /app/build ./build
