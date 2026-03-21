@@ -1,8 +1,9 @@
 import * as cache from './cache';
-import type { Item, User } from './types';
+import type { Item } from './types';
 import { runConcurrently, withRetry } from './utils';
 import { HN_BASE_URL, STALE_MS } from './constants';
 import { logger } from './logger';
+import { fetchUser } from './user';
 
 async function fetchItemInBackground(id: number) {
 	const url = `${HN_BASE_URL}/item/${id}.json`;
@@ -33,6 +34,11 @@ export async function fetchItem(id: number): Promise<Item> {
 	const item = await response.json();
 	cache.storeItem(item);
 	logger.info(`fetched item ${id}`);
+
+  if(item.by){
+    fetchUser(item.by)
+  }
+
 	return item;
 }
 
@@ -44,14 +50,3 @@ export async function fetchItems(ids: number[]): Promise<Item[]> {
 	);
 }
 
-export async function fetchUser(username: string) {
-	const url = `${HN_BASE_URL}/user/${username}.json`;
-	const response = await withRetry(() => fetch(url), { retries: 3, delay: 500 });
-
-	if (!response.ok) {
-		throw new Error(`HN API error ${response.status} ${response.statusText} — ${url}`);
-	}
-
-	const user = await response.json();
-	return user as User;
-}

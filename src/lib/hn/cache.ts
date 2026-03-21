@@ -7,7 +7,7 @@ import {
 	type SQLInputValue
 } from 'node:sqlite';
 import { join, resolve } from 'path';
-import type { Item } from './types';
+import type { Item, User } from './types';
 
 let database: DatabaseSync | null = null;
 
@@ -56,6 +56,17 @@ CREATE TABLE IF NOT EXISTS raw_cache (
 )
 `;
 
+const CREATE_USER_TABLE_SQL = `
+CREATE TABLE IF NOT EXISTS users (
+  id          TEXT PRIMARY KEY,
+  created     INTEGER,
+  karma       INTEGER,
+  about       TEXT,
+  submitted   TEXT,            -- JSON array of integers
+  cached_at   INTEGER NOT NULL -- Unix timestamp (ms) of last upsert
+)
+`;
+
 const UPSERT_SQL = `
 INSERT INTO items (
   id, type, by, time, text, dead, parent, poll,
@@ -85,6 +96,20 @@ ON CONFLICT(id) DO UPDATE SET
 const SELECT_SQL = `SELECT * FROM items WHERE id = :id`;
 const UPSERT_RAW_SQL = `INSERT INTO raw_cache (path, data, cached_at) VALUES (:path, :data, :cached_at) ON CONFLICT(path) DO UPDATE SET data = excluded.data, cached_at = excluded.cached_at`;
 const SELECT_RAW_SQL = `SELECT * FROM raw_cache WHERE path = :path`;
+
+const UPSERT_USER_SQL = `
+INSERT INTO users (id, created, karma, about, submitted, cached_at) VALUES (
+  :id, :created, :karma, :about, :submitted, :cached_at
+)
+ON CONFLICT(id) DO UPDATE SET
+  created     = excluded.created,
+  karma       = excluded.karma,
+  about       = excluded.about,
+  submitted   = excluded.submitted,
+  cached_at   = excluded.cached_at
+`;
+
+const SELECT_USER_SQL = `SELECT * FROM users WHERE id = :id`;
 
 function serialise(item: Item): Record<string, SQLInputValue> {
 	return {
@@ -131,10 +156,34 @@ function deserialise(row: Record<string, SQLOutputValue | undefined>) {
 	return item as Item;
 }
 
+function serialiseUser(user: User): Record<string, SQLInputValue> {
+	return {
+		id: user.id,
+		created: user.created ?? null,
+		karma: user.karma ?? null,
+		about: user.about ?? null,
+		submitted: user.submitted ? JSON.stringify(user.submitted) : null,
+		cached_at: Date.now()
+	};
+}
+
+function deserialiseUser(row: Record<string, SQLOutputValue | undefined>): User {
+	return {
+		id: row.id as string,
+		created: (row.created as number) ?? 0,
+		karma: (row.karma as number) ?? 0,
+		about: row.about as string | undefined,
+		submitted: row.submitted ? JSON.parse(row.submitted as string) : undefined,
+		cached_at: new Date(row.cached_at as number)
+	};
+}
+
 let upsertStatement: StatementSync;
 let selectStatement: StatementSync;
 let upsertRawStatement: StatementSync;
 let selectRawStatement: StatementSync;
+let upsertUserStatement: StatementSync;
+let selectUserStatement: StatementSync;
 
 let setup = false;
 export { getDatabase };
@@ -147,6 +196,7 @@ export function setupDatabase() {
 
 	db.exec(CREATE_TABLE_SQL);
 	db.exec(CREATE_RAW_CACHE_SQL);
+	db.exec(CREATE_USER_TABLE_SQL);
 
 	db.exec(`
 		CREATE INDEX IF NOT EXISTS idx_items_type ON items(type);
@@ -160,6 +210,8 @@ export function setupDatabase() {
 	selectStatement = db.prepare(SELECT_SQL);
 	upsertRawStatement = db.prepare(UPSERT_RAW_SQL);
 	selectRawStatement = db.prepare(SELECT_RAW_SQL);
+	upsertUserStatement = db.prepare(UPSERT_USER_SQL);
+	selectUserStatement = db.prepare(SELECT_USER_SQL);
 }
 
 export function getItem(id: number) {
@@ -182,4 +234,14 @@ export function getRawCache(path: string): { data: unknown; cached_at: Date } | 
 
 export function storeRawCache(path: string, data: unknown) {
 	return upsertRawStatement.run({ path, data: JSON.stringify(data), cached_at: Date.now() });
+}
+
+export function getUser(id: string) {
+	const row = selectUserStatement.get({ id });
+	return row ? deserialiseUser(row) : undefined;
+}
+
+export function storeUser(user: User) {
+	if (!user) return;
+	return upsertUserStatement.run(serialiseUser(user));
 }

@@ -30,4 +30,5 @@ export type User = {
   karma: number;
   about?: string;
   submitted?: number[];
+  cached_at: Date;
 }

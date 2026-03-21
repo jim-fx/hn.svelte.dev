@@ -47,6 +47,10 @@
 			<div class="stat-label">Total Items</div>
 		</div>
 		<div class="stat-card">
+			<div class="stat-value">{formatNumber(stats.totalUsers)}</div>
+			<div class="stat-label">Total Users</div>
+		</div>
+		<div class="stat-card">
 			<div class="stat-value">{formatNumber(stats.rawCacheStats.count)}</div>
 			<div class="stat-label">Cached API Responses</div>
 		</div>
@@ -135,7 +139,7 @@
 			</div>
 		</section>
 
-    <br>
+		<br />
 
 		<section class="chart-section">
 			<h2>Top Users</h2>
@@ -143,10 +147,10 @@
 				{#each stats.topUsers as user, i}
 					<div class="user-row">
 						<span class="rank">{i + 1}</span>
-            <a href="/user/{user.by}">
-              <span class="username">{user.by}</span>
-            </a>
-						<span class="count">{formatNumber(user.count)}</span>
+						<a href="/user/{user.id}">
+							<span class="username">{user.id}</span>
+						</a>
+						<span class="count">{formatNumber(user.karma)}</span>
 					</div>
 				{/each}
 			</div>
@@ -364,13 +368,13 @@
 		text-decoration: underline;
 	}
 
-  a {
-    text-decoration: none;
-  }
+	a {
+		text-decoration: none;
+	}
 
-  a:hover {
+	a:hover {
 		text-decoration: underline;
-  }
+	}
 
 	.score {
 		color: var(--fg-light);

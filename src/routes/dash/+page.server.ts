@@ -5,10 +5,11 @@ import { DB_DIR } from '$env/static/private';
 
 interface Stats {
 	totalItems: number;
+	totalUsers: number;
 	itemsByType: { type: string; count: number }[];
 	itemsByHour: { hour: number; count: number }[];
 	scoreDistribution: { bucket: string; count: number }[];
-	topUsers: { by: string; count: number }[];
+	topUsers: { id: string; karma: number }[];
 	topStories: { id: number; title: string; score: number; by: string }[];
 	topComments: { id: number; text: string; by: string; score: number }[];
 	rawCacheStats: { count: number; oldest: number | null; newest: number | null };
@@ -33,6 +34,9 @@ export async function load() {
 	const db = getDatabase();
 
 	const totalItems = (db.prepare('SELECT COUNT(*) as count FROM items').get() as { count: number })
+		.count;
+
+	const totalUsers = (db.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number })
 		.count;
 
 	const dbPath = join(DB_DIR, 'hn.sqlite');
@@ -114,15 +118,13 @@ export async function load() {
 	const topUsers = db
 		.prepare(
 			`
-		SELECT by, COUNT(*) as count 
-		FROM items 
-		WHERE by IS NOT NULL 
-		GROUP BY by 
-		ORDER BY count DESC 
+		SELECT id, karma 
+		FROM users 
+		ORDER BY karma DESC 
 		LIMIT 10
 	`
 		)
-		.all() as { by: string; count: number }[];
+		.all() as { id: string; karma: number }[];
 
 	const topStories = db
 		.prepare(
@@ -163,6 +165,7 @@ export async function load() {
 	return {
 		stats: {
 			totalItems,
+			totalUsers,
 			itemsByType,
 			itemsByHour,
 			scoreDistribution,
