@@ -137,6 +137,7 @@ let upsertRawStatement: StatementSync;
 let selectRawStatement: StatementSync;
 
 let setup = false;
+export { getDatabase };
 export function setupDatabase() {
 	if (setup) return;
 	setup = true;

@@ -7,7 +7,7 @@
 </script>
 
 {#if !comment.deleted}
-	<article class="comment">
+	<article class="comment" id="comment-{comment.id}">
 		<details open>
 			<summary>
 				<div class="meta-bar" role="button" tabindex="0">

@@ -1,8 +1,16 @@
-<script>
-	import Comment from './Comment.svelte';
+<script lang="ts">
+	import Comment from '$lib/Comment.svelte';
 	import { timeToReadable } from '$lib/utils';
 	const { data: item } = $props();
-	const domain = $derived(new URL(item.url ?? '').hostname);
+  function parseDomain(u?:string){
+    if(!u) return ""
+      try {
+        return new URL(u ?? '').hostname
+      }catch {
+        return ""
+      }
+    }
+	const domain = $derived(parseDomain(item.url));
 	const timeAgo = $derived(item.time ? timeToReadable(item.time) : '');
 </script>
 
