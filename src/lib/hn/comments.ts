@@ -1,5 +1,5 @@
 import { fetchItem, fetchItems } from "./item";
-import * as cache from "./db"
+import * as db from "$lib/db"
 import type { Comment } from "./types";
 import { runConcurrently } from "./utils";
 
@@ -18,7 +18,7 @@ export async function fetchItemWithComments(postId:number) {
 		if(item){
 			item.comments = item.comments || [];
 			for(const kidId of (item?.kids??[])){
-				const child = cache.getItem(kidId) as Comment;
+				const child = db.getItem(kidId) as Comment;
 				if (child){
 					stack.push(child)
 					item["comments"].push(child);

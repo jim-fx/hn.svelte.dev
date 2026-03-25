@@ -2,8 +2,6 @@ import * as hn from '$lib/hn';
 
 export async function load({ params, setHeaders, depends }) {
 
-	hn.setupDatabase();
-
 	const id = params.id;
 
 	// Cache item page for 5 minutes (items don't change often)

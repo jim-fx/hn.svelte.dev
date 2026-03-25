@@ -1,4 +1,4 @@
-import * as hn from '$lib/hn';
+import * as db from "$lib/db";
 import type { Item, User } from '$lib/hn';
 
 type StoryResult = { type: 'story'; items: Item[] };
@@ -27,15 +27,15 @@ export async function load({ url }: { url: URL }): Promise<SearchResult> {
 	}
 
 	if (searchType === 'user') {
-		const users = await hn.searchUsers(query, searchInAbout);
+		const users = await db.searchUsers(query, searchInAbout);
 		return { type: 'user', items: users, query, searchInBody, searchInAbout };
 	}
 
 	if (searchType === 'comment') {
-		const comments = await hn.searchComments(query);
+		const comments = await db.searchComments(query);
 		return { type: 'comment', items: comments, query, searchInBody, searchInAbout };
 	}
 
-	const items = await hn.searchItems(query, searchInBody);
+	const items = await db.searchItems(query, searchInBody);
 	return { type: 'story', items, query, searchInBody, searchInAbout };
 }

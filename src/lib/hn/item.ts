@@ -1,4 +1,4 @@
-import * as cache from './db';
+import * as db from '$lib/db';
 import type { Item } from './types';
 import { runConcurrently, withRetry } from './utils';
 import { HN_BASE_URL, ITEM_STALE_MS } from './constants';
@@ -13,7 +13,7 @@ async function fetchItemInBackground(id: number) {
 		const response = await fetch(url);
 		if (!response.ok) return;
 		const fresh = await response.json();
-		cache.storeItem(fresh);
+		db.storeItem(fresh);
 		logger.debug(`background refresh item ${id}`);
 	} catch (err) {
 		logger.warn(`background refresh item ${id} failed`, { error: err });
@@ -22,7 +22,7 @@ async function fetchItemInBackground(id: number) {
 
 export async function fetchItem(id: number): Promise<Item> {
 	const url = `${HN_BASE_URL}/item/${id}.json`;
-	const cached = cache.getItem(id);
+	const cached = db.getItem(id);
 	if (cached !== undefined) {
 		const isStale = Date.now() - new Date(cached.cached_at).getTime() > ITEM_STALE_MS;
 		if (isStale) fetchItemInBackground(id);
@@ -35,7 +35,7 @@ export async function fetchItem(id: number): Promise<Item> {
 	}
 
 	const item = await response.json();
-	cache.storeItem(item);
+	db.storeItem(item);
 	logger.info(`fetched item ${id}`);
 
 	if (item.by) {

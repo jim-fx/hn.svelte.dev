@@ -53,7 +53,7 @@ export async function runConcurrently<T>(
 			const current = index++;
 			try {
 				results[current] = await tasks[current]();
-			} catch {
+			} catch(e) {
 				results[current] = undefined as T;
 			}
 		}

@@ -1,4 +1,4 @@
-import { getRawCache, storeRawCache } from './db';
+import { getRawCache, storeRawCache } from '$lib/db';
 import { fetchItemsWithComments } from './comments';
 import { HN_BASE_URL, LIST_STALE_MS } from './constants';
 import { fetchItems } from './item';
@@ -55,7 +55,7 @@ export async function fetchList(list: StoryType, page = 1, perPage = 30) {
 	const pageIds = allIds.slice(start, end);
 	const items = await fetchItemsWithComments(pageIds);
 
-	const filtered = items.filter((item) => item !== null && !item.dead && !item.deleted);
+	const filtered = items.filter((item) => item && !item.dead && !item.deleted);
 	logger.info(`fetched list ${list} page ${page}: ${filtered.length} items`);
 
 	return {

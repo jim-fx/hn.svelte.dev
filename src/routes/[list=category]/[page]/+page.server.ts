@@ -2,8 +2,6 @@ import * as hn from '$lib/hn';
 
 export async function load({ params, setHeaders, depends }) {
 
-	hn.setupDatabase();
-
 	const list = params.list as hn.StoryType;
 	const page = +params.page;
 

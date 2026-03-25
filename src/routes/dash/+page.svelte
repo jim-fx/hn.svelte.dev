@@ -221,7 +221,7 @@
 					{#each stats.commonTokens as token, i (token)}
 						<div class="token-row">
 							<span class="rank">{i + 1}</span>
-							<span class="token">{token.token}</span>
+							<span class="token">{token.term}</span>
 							<span class="count">{formatNumber(token.count)}</span>
 						</div>
 					{/each}
