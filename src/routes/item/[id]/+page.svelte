@@ -2,14 +2,14 @@
 	import Comment from '$lib/Comment.svelte';
 	import { timeToReadable } from '$lib/utils';
 	const { data: item } = $props();
-  function parseDomain(u?:string){
-    if(!u) return ""
-      try {
-        return new URL(u ?? '').hostname
-      }catch {
-        return ""
-      }
-    }
+	function parseDomain(u?: string) {
+		if (!u) return '';
+		try {
+			return new URL(u ?? '').hostname;
+		} catch {
+			return '';
+		}
+	}
 	const domain = $derived(parseDomain(item.url));
 	const timeAgo = $derived(item.time ? timeToReadable(item.time) : '');
 </script>
@@ -28,6 +28,9 @@
 		<p class="meta">
 			{item.score} points by <a href="/user/{item.by}">{item.by}</a>
 			{timeAgo}
+			{#if item.parent}
+				| <a href="/item/{item.parent}">parent</a>
+			{/if}
 		</p>
 
 		{#if item.text}

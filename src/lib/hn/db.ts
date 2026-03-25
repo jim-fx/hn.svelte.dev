@@ -9,8 +9,6 @@ import {
 import { join, resolve } from 'path';
 import type { Item, User } from './types';
 
-
-
 import { createLogger } from '$lib/logger';
 import { sqlStatements } from './statements';
 const SELECT_ITEM_SQL = `SELECT * FROM items WHERE id = :id`;
@@ -18,39 +16,41 @@ const UPSERT_RAW_SQL = `INSERT INTO raw_cache (path, data, cached_at) VALUES (:p
 const SELECT_RAW_SQL = `SELECT * FROM raw_cache WHERE path = :path`;
 const SELECT_USER_SQL = `SELECT * FROM users WHERE id = :id`;
 
-type ExtendedDatabase = DatabaseSync & { execSafe: (statement: string) => void, prepareSafe: (statement: string) => StatementSync };
+type ExtendedDatabase = DatabaseSync & {
+	execSafe: (statement: string) => void;
+	prepareSafe: (statement: string) => StatementSync;
+};
 const dbs: Record<string, ExtendedDatabase> = {};
-type DatabaseName = "hn.sqlite" | "search.sqlite";
+type DatabaseName = 'hn.sqlite' | 'search.sqlite';
 function getDatabase(dbName: DatabaseName): ExtendedDatabase {
-  const dataDir = DB_DIR ?? resolve('./data');
-  const logger = createLogger("db:"+dbName);
+	const dataDir = DB_DIR ?? resolve('./data');
+	const logger = createLogger('db:' + dbName);
 	if (!(dbName in dbs)) {
 		if (!existsSync(dataDir)) mkdirSync(dataDir, { recursive: true });
 		dbs[dbName] = new DatabaseSync(join(DB_DIR, dbName)) as ExtendedDatabase;
-    dbs[dbName].prepareSafe = function(statement:string){
-      try {
-        const prepared =  dbs[dbName].prepare(statement);
-        logger.debug(`prepared statement`, {dbName, statement});
-        return prepared;
-      } catch (error) {
-        logger.error(`Failed to prepare statement`, { statement, error })
-        throw error;
-      }
-    }
-    dbs[dbName].execSafe = function(statement:string){
-      try {
-        const result = dbs[dbName].exec(statement);
-        logger.debug(`executed statement`, {dbName, statement});
-        return result;
-      } catch (error) {
-        logger.error(`Failed to execute statement`, { statement, error }) 
-        throw error;
-      }
-    }
+		dbs[dbName].prepareSafe = function (statement: string) {
+			try {
+				const prepared = dbs[dbName].prepare(statement);
+				logger.debug(`prepared statement`, { dbName, statement });
+				return prepared;
+			} catch (error) {
+				logger.error(`Failed to prepare statement`, { statement, error });
+				throw error;
+			}
+		};
+		dbs[dbName].execSafe = function (statement: string) {
+			try {
+				const result = dbs[dbName].exec(statement);
+				logger.debug(`executed statement`, { dbName, statement });
+				return result;
+			} catch (error) {
+				logger.error(`Failed to execute statement`, { statement, error });
+				throw error;
+			}
+		};
 	}
 	return dbs[dbName];
 }
-
 
 function serialise(item: Item): Record<string, SQLInputValue> {
 	return {
@@ -61,7 +61,7 @@ function serialise(item: Item): Record<string, SQLInputValue> {
 		text: item.text ?? null,
 		dead: item.dead ? 1 : 0,
 		parent: item.parent ?? null,
-		poll: item.poll ?? null,
+		poll: "poll" in item ? item.poll as SQLInputValue : null,
 		url: item.url ?? null,
 		score: item.score ?? null,
 		title: item.title ?? null,
@@ -120,24 +120,32 @@ function deserialiseUser(row: Record<string, SQLOutputValue | undefined>): User 
 }
 
 export const statements = {} as {
-  upsertItem: StatementSync;
-  selectItem: StatementSync;
-  upsertRaw: StatementSync;
-  selectRaw: StatementSync;
-  upsertUser: StatementSync;
-  selectUser: StatementSync;
+	upsertItem: StatementSync;
+	selectItem: StatementSync;
+	upsertRaw: StatementSync;
+	selectRaw: StatementSync;
+	upsertUser: StatementSync;
+	selectUser: StatementSync;
 
-  // Search Statements
-  searchItem: StatementSync;
-  searchItemLike: StatementSync;
-}
+	// Search Statements
+	searchStory: StatementSync;
+	searchStoryLike: StatementSync;
+	searchUser: StatementSync;
+	searchUserLike: StatementSync;
+	searchUserAbout: StatementSync;
+	searchUserAboutLike: StatementSync;
+	searchStoryBody: StatementSync;
+	searchStoryBodyLike: StatementSync;
+	searchComment: StatementSync;
+	searchCommentLike: StatementSync;
+};
 
 let setup = false;
 export { getDatabase };
 export function setupDatabase() {
 	if (setup) return;
 	setup = true;
-	const db = getDatabase("hn.sqlite");
+	const db = getDatabase('hn.sqlite');
 	db.execSafe('PRAGMA journal_mode = WAL');
 	db.execSafe('PRAGMA synchronous  = NORMAL');
 
@@ -151,21 +159,31 @@ export function setupDatabase() {
 	`);
 
 	statements.upsertItem = db.prepareSafe(sqlStatements.upsert_item);
-  statements.selectItem = db.prepareSafe(SELECT_ITEM_SQL);
-  statements.upsertRaw = db.prepareSafe(UPSERT_RAW_SQL);
-  statements.selectRaw = db.prepareSafe(SELECT_RAW_SQL);
-  statements.upsertUser = db.prepareSafe(sqlStatements.upsert_user);
-  statements.selectUser = db.prepareSafe(SELECT_USER_SQL);
-  statements.searchItemLike = db.prepareSafe(sqlStatements.search_items_like);
+	statements.selectItem = db.prepareSafe(SELECT_ITEM_SQL);
+	statements.upsertRaw = db.prepareSafe(UPSERT_RAW_SQL);
+	statements.selectRaw = db.prepareSafe(SELECT_RAW_SQL);
+	statements.upsertUser = db.prepareSafe(sqlStatements.upsert_user);
+	statements.selectUser = db.prepareSafe(SELECT_USER_SQL);
 
-  const searchDb = getDatabase("search.sqlite");
-  searchDb.execSafe('PRAGMA journal_mode = WAL');
-  searchDb.execSafe('PRAGMA synchronous  = NORMAL');
-  searchDb.execSafe(sqlStatements.setup_search);
+	const searchDb = getDatabase('search.sqlite');
+	searchDb.execSafe('PRAGMA journal_mode = WAL');
+	searchDb.execSafe('PRAGMA synchronous  = NORMAL');
+	searchDb.execSafe(sqlStatements.setup_search);
 
-  db.execSafe(`ATTACH DATABASE '${searchDb.location()}' AS search`);
-  db.execSafe(sqlStatements.sync_search);
-  statements.searchItem = db.prepareSafe(sqlStatements.search_item);
+	db.execSafe(`ATTACH DATABASE '${searchDb.location()}' AS search`);
+	db.execSafe(sqlStatements.sync_search);
+	db.execSafe(sqlStatements.sync_users);
+
+  statements.searchStoryLike = db.prepareSafe(sqlStatements.search_story_like);
+	statements.searchStory = db.prepareSafe(sqlStatements.search_story);
+	statements.searchUser = db.prepareSafe(sqlStatements.search_user);
+	statements.searchUserLike = db.prepareSafe(sqlStatements.search_user_like);
+	statements.searchUserAbout = db.prepareSafe(sqlStatements.search_user_about);
+	statements.searchUserAboutLike = db.prepareSafe(sqlStatements.search_user_about_like);
+	statements.searchStoryBody = db.prepareSafe(sqlStatements.search_story_body);
+	statements.searchStoryBodyLike = db.prepareSafe(sqlStatements.search_story_body_like);
+	statements.searchComment = db.prepareSafe(sqlStatements.search_comment);
+	statements.searchCommentLike = db.prepareSafe(sqlStatements.search_comment_like);
 }
 
 export function getItem(id: number) {

@@ -2,7 +2,11 @@
 	import type { Item } from '$lib/hn';
 	import { timeToReadable } from '$lib/utils';
 
-	const { item, index } = $props<{ item: Item; index: number }>();
+	const {
+		item,
+		index,
+		showBodyPreview = false
+	} = $props<{ item: Item; index: number; showBodyPreview?: boolean }>();
 	const domain = $derived(item.url ? new URL(item.url)?.hostname : '');
 	const timeAgo = $derived(item.time ? timeToReadable(item.time) : '');
 </script>
@@ -18,6 +22,12 @@
 			{#if domain}<small>({domain})</small>{/if}
 		</a>
 	</h2>
+
+	{#if showBodyPreview && item.matchedBody}
+		<p class="body-preview">
+			{@html item.matchedBody}
+		</p>
+	{/if}
 
 	{#if item.type === 'job'}
 		<p>{timeAgo}</p>
@@ -72,6 +82,23 @@
 	small {
 		color: var(--fg-light);
 		font-weight: 300;
+	}
+
+	.body-preview {
+		font-size: 0.85em;
+		color: var(--fg);
+		background-color: var(--bg-secondary);
+		padding: 0.5em;
+		border-radius: 0.3em;
+		margin: 0 0 0.5em 0;
+		line-height: 1.4;
+	}
+
+	:global(.body-preview mark) {
+		background-color: var(--highlight);
+		color: var(--fg);
+		border-radius: 0.2em;
+		padding: 0 0.1em;
 	}
 
 	.index {

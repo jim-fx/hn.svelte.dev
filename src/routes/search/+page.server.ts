@@ -1,16 +1,41 @@
 import * as hn from '$lib/hn';
+import type { Item, User } from '$lib/hn';
 
-export async function load({ url }) {
-  const query = url.searchParams.get('q');
-  if(!query) return {
-    query,
-    items: []
-  };
+type StoryResult = { type: 'story'; items: Item[] };
+type UserResult = { type: 'user'; items: User[] };
+type CommentResult = { type: 'comment'; items: Item[] };
+type SearchResult = (StoryResult | UserResult | CommentResult) & {
+	query: string;
+	searchInBody: boolean;
+	searchInAbout: boolean;
+};
 
-  const items = await hn.searchItems(query);
+export async function load({ url }: { url: URL }): Promise<SearchResult> {
+	const query = url.searchParams.get('q') ?? '';
+	const searchType = url.searchParams.get('type') ?? 'story';
+	const searchInBody = url.searchParams.get('body') === '1';
+	const searchInAbout = url.searchParams.get('about') === '1';
 
-  return {
-    query,
-    items
-  }
+	if (!query) {
+		if (searchType === 'user') {
+			return { type: 'user', items: [], query, searchInBody, searchInAbout };
+		}
+		if (searchType === 'comment') {
+			return { type: 'comment', items: [], query, searchInBody, searchInAbout };
+		}
+		return { type: 'story', items: [], query, searchInBody, searchInAbout };
+	}
+
+	if (searchType === 'user') {
+		const users = await hn.searchUsers(query, searchInAbout);
+		return { type: 'user', items: users, query, searchInBody, searchInAbout };
+	}
+
+	if (searchType === 'comment') {
+		const comments = await hn.searchComments(query);
+		return { type: 'comment', items: comments, query, searchInBody, searchInAbout };
+	}
+
+	const items = await hn.searchItems(query, searchInBody);
+	return { type: 'story', items, query, searchInBody, searchInAbout };
 }
