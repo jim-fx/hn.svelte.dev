@@ -10,7 +10,11 @@
 <article>
 	<h2>
 		<a href={item.domain ? item.url : `/item/${item.id}`}>
-			{item.title}
+			{#if item.matchedTitle}
+				{@html item.matchedTitle}
+			{:else}
+				{item.title}
+			{/if}
 			{#if domain}<small>({domain})</small>{/if}
 		</a>
 	</h2>
@@ -49,6 +53,13 @@
 
 	h2 a {
 		text-decoration: none;
+	}
+
+	:global(h2 mark) {
+		background-color: var(--highlight);
+		color: var(--fg);
+		border-radius: 0.2em;
+		padding: 0 0.1em;
 	}
 
 	p {
