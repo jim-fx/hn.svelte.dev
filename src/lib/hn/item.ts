@@ -26,7 +26,6 @@ export async function fetchItem(id: number): Promise<Item> {
 	if (cached !== undefined) {
 		const isStale = Date.now() - new Date(cached.cached_at).getTime() > ITEM_STALE_MS;
 		if (isStale) fetchItemInBackground(id);
-		// logger.debug(`cache hit item ${id}`);
 		return cached;
 	}
 

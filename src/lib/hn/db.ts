@@ -22,13 +22,32 @@ type ExtendedDatabase = DatabaseSync & {
 };
 const dbs: Record<string, ExtendedDatabase> = {};
 type DatabaseName = 'hn.sqlite' | 'search.sqlite';
+
+const ZSTD_PATH = resolve(DB_DIR, 'zstd_vfs.so');
+const IS_COMPRESSED = existsSync(ZSTD_PATH);
+const DATA_DIR = DB_DIR ?? resolve('./data');
+
 function getDatabase(dbName: DatabaseName): ExtendedDatabase {
-	const dataDir = DB_DIR ?? resolve('./data');
 	const logger = createLogger('db:' + dbName);
 	if (!(dbName in dbs)) {
-		if (!existsSync(dataDir)) mkdirSync(dataDir, { recursive: true });
-		dbs[dbName] = new DatabaseSync(join(DB_DIR, dbName)) as ExtendedDatabase;
-		dbs[dbName].prepareSafe = function (statement: string) {
+		if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
+    if (IS_COMPRESSED) {
+      const bootstrap = new DatabaseSync(':memory:', { allowExtension: true });
+      bootstrap.loadExtension(ZSTD_PATH);
+      bootstrap.close();
+    }
+    const dbPath = join(resolve(DATA_DIR), dbName);
+    const uri = `file:${dbPath}?vfs=zstd`;
+
+    try {
+
+
+    const db = IS_COMPRESSED
+        ? new DatabaseSync(uri) as ExtendedDatabase
+        : new DatabaseSync(dbPath) as ExtendedDatabase;
+
+
+		db.prepareSafe = function (statement: string) {
 			try {
 				const prepared = dbs[dbName].prepare(statement);
 				logger.debug(`prepared statement`, { dbName, statement });
@@ -38,7 +57,7 @@ function getDatabase(dbName: DatabaseName): ExtendedDatabase {
 				throw error;
 			}
 		};
-		dbs[dbName].execSafe = function (statement: string) {
+		db.execSafe = function (statement: string) {
 			try {
 				const result = dbs[dbName].exec(statement);
 				logger.debug(`executed statement`, { dbName, statement });
@@ -48,6 +67,11 @@ function getDatabase(dbName: DatabaseName): ExtendedDatabase {
 				throw error;
 			}
 		};
+    dbs[dbName] = db;
+    }catch(e) {
+      logger.error(`Failed to open database`, { dbPath, error:e, zstd: IS_COMPRESSED?ZSTD_PATH:false,});
+      throw e;
+    }
 	}
 	return dbs[dbName];
 }
@@ -146,8 +170,13 @@ export function setupDatabase() {
 	if (setup) return;
 	setup = true;
 	const db = getDatabase('hn.sqlite');
-	db.execSafe('PRAGMA journal_mode = WAL');
-	db.execSafe('PRAGMA synchronous  = NORMAL');
+  if (IS_COMPRESSED) {
+    db.execSafe('PRAGMA journal_mode = DELETE');
+    db.execSafe('PRAGMA cache_size = -102400');
+  }else {
+    db.execSafe('PRAGMA journal_mode = WAL');
+    db.execSafe('PRAGMA synchronous  = NORMAL');
+  }
 
 	db.execSafe(sqlStatements.setup_hn);
 	db.execSafe(`
@@ -166,11 +195,20 @@ export function setupDatabase() {
 	statements.selectUser = db.prepareSafe(SELECT_USER_SQL);
 
 	const searchDb = getDatabase('search.sqlite');
-	searchDb.execSafe('PRAGMA journal_mode = WAL');
-	searchDb.execSafe('PRAGMA synchronous  = NORMAL');
+  if (IS_COMPRESSED) {
+    searchDb.execSafe('PRAGMA journal_mode = DELETE');
+    searchDb.execSafe('PRAGMA cache_size = -102400');
+  }else {
+    searchDb.execSafe('PRAGMA journal_mode = WAL');
+    searchDb.execSafe('PRAGMA synchronous  = NORMAL');
+  }
 	searchDb.execSafe(sqlStatements.setup_search);
 
-	db.execSafe(`ATTACH DATABASE '${searchDb.location()}' AS search`);
+  searchDb.close();
+
+  const dbPath = join(resolve(DATA_DIR), "search.sqlite");
+  const uri = IS_COMPRESSED ? dbPath : `file:${dbPath}?vfs=zstd`;
+	db.execSafe(`ATTACH DATABASE '${uri}' AS search`);
 	db.execSafe(sqlStatements.sync_search);
 	db.execSafe(sqlStatements.sync_users);
 
