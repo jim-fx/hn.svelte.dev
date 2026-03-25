@@ -1,4 +1,5 @@
-INSERT INTO search.items(id, type, title, body, by)
+DELETE FROM search.items;
+INSERT OR REPLACE INTO search.items(id, type, title, body, by)
 SELECT
     id,
     type,
@@ -7,3 +8,5 @@ SELECT
     COALESCE(by,    '')
 FROM main.items
 WHERE deleted IS NOT 1;
+
+DELETE FROM search.token_counts;

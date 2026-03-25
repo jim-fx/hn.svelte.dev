@@ -1,4 +1,4 @@
-INSERT INTO search.users(id, about)
+INSERT OR REPLACE INTO search.users(id, about)
 SELECT
     id,
     COALESCE(about, '')

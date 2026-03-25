@@ -20,6 +20,25 @@ interface Stats {
 		freeListPages: number;
 		schemaVersion: number;
 	};
+	searchDbSize: string;
+	searchDbMeta: {
+		pageCount: number;
+		pageSize: number;
+		freeListPages: number;
+	};
+	indexedItemsCount: number;
+	indexedUsersCount: number;
+	itemsByTypeSearch: { type: string; count: number }[];
+	syncStatus: {
+		totalIndexed: number;
+		itemsPercent: number;
+		usersPercent: number;
+	};
+	fts5Info: {
+		itemsTokenizer: string;
+		usersTokenizer: string;
+	};
+	commonTokens: { token: string; count: number }[];
 }
 
 function formatBytes(bytes: number): string {
@@ -31,7 +50,7 @@ function formatBytes(bytes: number): string {
 
 export async function load() {
 	setupDatabase();
-	const db = getDatabase("hn.sqlite");
+	const db = getDatabase('hn.sqlite');
 
 	const totalItems = (db.prepare('SELECT COUNT(*) as count FROM items').get() as { count: number })
 		.count;
@@ -162,6 +181,133 @@ export async function load() {
 		)
 		.get() as { count: number; oldest: number | null; newest: number | null };
 
+	// Search database stats
+	const searchDbPath = join(DB_DIR, 'search.sqlite');
+	let searchDbSize = 'N/A';
+	let searchDbMeta = { pageCount: 0, pageSize: 0, freeListPages: 0 };
+
+	try {
+		const searchStats = statSync(searchDbPath);
+		searchDbSize = formatBytes(searchStats.size);
+
+		const searchDb = getDatabase('search.sqlite');
+		const searchMeta = searchDb
+			.prepare('PRAGMA page_count; PRAGMA page_size; PRAGMA freelist_count;')
+			.all() as {
+			page_count: number;
+			page_size: number;
+			freelist_count: number;
+		}[];
+		searchDbMeta = {
+			pageCount: searchMeta[0]?.page_count ?? 0,
+			pageSize: searchMeta[1]?.page_size ?? 0,
+			freeListPages: searchMeta[2]?.freelist_count ?? 0
+		};
+	} catch {
+		// File might not exist yet
+	}
+
+	const indexedItemsCount = (() => {
+		try {
+			const searchDb = getDatabase('search.sqlite');
+			return (searchDb.prepare('SELECT COUNT(*) as count FROM items').get() as { count: number })
+				.count;
+		} catch {
+			return 0;
+		}
+	})();
+
+	const indexedUsersCount = (() => {
+		try {
+			const searchDb = getDatabase('search.sqlite');
+			return (searchDb.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number })
+				.count;
+		} catch {
+			return 0;
+		}
+	})();
+
+	const itemsByTypeSearch = (() => {
+		try {
+			const searchDb = getDatabase('search.sqlite');
+			return searchDb
+				.prepare('SELECT type, COUNT(*) as count FROM items GROUP BY type ORDER BY count DESC')
+				.all() as { type: string; count: number }[];
+		} catch {
+			return [];
+		}
+	})();
+
+	const totalIndexed = indexedItemsCount + indexedUsersCount;
+	const syncStatus = {
+		totalIndexed,
+		itemsPercent: totalIndexed > 0 ? (indexedItemsCount / totalIndexed) * 100 : 0,
+		usersPercent: totalIndexed > 0 ? (indexedUsersCount / totalIndexed) * 100 : 0
+	};
+
+	const fts5Info = (() => {
+		try {
+			const searchDb = getDatabase('search.sqlite');
+			const tables = searchDb
+				.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '%config'")
+				.all() as { name: string }[];
+			const tableNames = tables.map((t) => t.name);
+			let itemsTokenizer = 'trigram';
+			let usersTokenizer = 'default';
+			if (!tableNames.includes('items_config')) {
+				itemsTokenizer = 'trigram (inferred)';
+			}
+			if (!tableNames.includes('users_config')) {
+				usersTokenizer = 'default (inferred)';
+			}
+			return { itemsTokenizer, usersTokenizer };
+		} catch {
+			return { itemsTokenizer: 'N/A', usersTokenizer: 'N/A' };
+		}
+	})();
+
+	const commonTokens = (() => {
+		try {
+			const db = getDatabase('hn.sqlite');
+
+			const tokenMap = new Map<string, number>();
+			const batchSize = 5000;
+			let offset = 0;
+
+			while (true) {
+				const items = db
+					.prepare(
+						`SELECT id, title, text FROM items WHERE deleted IS NOT 1 AND (title IS NOT NULL OR text IS NOT NULL) LIMIT ? OFFSET ?`
+					)
+					.all(batchSize, offset) as { id: number; title: string | null; text: string | null }[];
+
+				if (items.length === 0) break;
+
+				for (const item of items) {
+					const text = ((item.title ?? '') + ' ' + (item.text ?? '')).toLowerCase();
+					const words = text
+						.split(/[\s\n\r\t.,;:!?()[\]{}"'<>"\\/]+/)
+						.filter((w) => w.length > 2 && /^[a-z0-9]+$/.test(w));
+					for (const word of words) {
+						tokenMap.set(word, (tokenMap.get(word) ?? 0) + 1);
+					}
+				}
+
+				offset += batchSize;
+			}
+
+			const sorted = [...tokenMap.entries()]
+				.sort((a, b) => b[1] - a[1])
+				.slice(0, 20)
+				.map(([token, count]) => ({ token, count }));
+
+			return sorted;
+		} catch (e) {
+			console.error('Error computing tokens:', e);
+			return [];
+		}
+	})();
+
 	return {
 		stats: {
 			totalItems,
@@ -174,7 +320,15 @@ export async function load() {
 			topComments,
 			rawCacheStats,
 			dbSize,
-			dbMeta
+			dbMeta,
+			searchDbSize,
+			searchDbMeta,
+			indexedItemsCount,
+			indexedUsersCount,
+			itemsByTypeSearch,
+			syncStatus,
+			fts5Info,
+			commonTokens
 		}
 	} as { stats: Stats };
 }

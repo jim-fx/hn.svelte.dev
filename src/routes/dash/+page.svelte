@@ -32,6 +32,7 @@
 	);
 
 	const lineData = $derived(stats?.itemsByHour.map((d) => ({ x: d.hour, y: d.count })) ?? []);
+
 </script>
 
 <svelte:head>
@@ -41,36 +42,35 @@
 <h1>Cache Dashboard</h1>
 
 {#if stats}
-	<div class="stats-grid">
-		<div class="stat-card">
-			<div class="stat-value">{formatNumber(stats.totalItems)}</div>
-			<div class="stat-label">Total Items</div>
+	<section class="db-section">
+		<div class="stats-grid">
+			<div class="stat-card">
+				<div class="stat-value">{formatNumber(stats.totalItems)}</div>
+				<div class="stat-label">Total Items</div>
+			</div>
+			<div class="stat-card">
+				<div class="stat-value">{formatNumber(stats.totalUsers)}</div>
+				<div class="stat-label">Total Users</div>
+			</div>
+			<div class="stat-card">
+				<div class="stat-value">{stats.dbSize}</div>
+				<div class="stat-label">Database Size</div>
+			</div>
+			<div class="stat-card small">
+				<div class="stat-value">{formatNumber(stats.dbMeta.pageCount)}</div>
+				<div class="stat-label">Total Pages</div>
+			</div>
+			<div class="stat-card">
+				<div class="stat-value">{formatNumber(stats.rawCacheStats.count)}</div>
+				<div class="stat-label">Cached API Responses</div>
+			</div>
+			<div class="stat-card">
+				<div class="stat-value">{formatAge(stats.rawCacheStats.oldest)}</div>
+				<div class="stat-label">Oldest Cache</div>
+			</div>
 		</div>
-		<div class="stat-card">
-			<div class="stat-value">{formatNumber(stats.totalUsers)}</div>
-			<div class="stat-label">Total Users</div>
-		</div>
-		<div class="stat-card">
-			<div class="stat-value">{formatNumber(stats.rawCacheStats.count)}</div>
-			<div class="stat-label">Cached API Responses</div>
-		</div>
-		<div class="stat-card">
-			<div class="stat-value">{formatAge(stats.rawCacheStats.oldest)}</div>
-			<div class="stat-label">Oldest Cache Entry</div>
-		</div>
-		<div class="stat-card">
-			<div class="stat-value">{formatAge(stats.rawCacheStats.newest)}</div>
-			<div class="stat-label">Newest Cache Entry</div>
-		</div>
-		<div class="stat-card">
-			<div class="stat-value">{stats.dbSize}</div>
-			<div class="stat-label">Database Size</div>
-		</div>
-		<div class="stat-card small">
-			<div class="stat-value">{formatNumber(stats.dbMeta.pageCount)}</div>
-			<div class="stat-label">Db Total Pages</div>
-		</div>
-	</div>
+	</section>
+
 
 	<div class="charts-grid">
 		<section class="chart-section">
@@ -79,7 +79,7 @@
 				<Pie data={pieData} />
 			</div>
 			<div class="legend">
-				{#each stats.itemsByType as item, i}
+				{#each stats.itemsByType as item, i (i)}
 					<div class="legend-item">
 						<span
 							class="legend-dot"
@@ -139,12 +139,12 @@
 			</div>
 		</section>
 
-		<br />
+    <br/>
 
 		<section class="chart-section">
 			<h2>Top Users</h2>
 			<div class="user-list">
-				{#each stats.topUsers as user, i}
+				{#each stats.topUsers as user, i (user.id)}
 					<div class="user-row">
 						<span class="rank">{i + 1}</span>
 						<a href="/user/{user.id}">
@@ -159,7 +159,7 @@
 		<section class="chart-section">
 			<h2>Top Stories</h2>
 			<div class="item-list">
-				{#each stats.topStories as story, i}
+				{#each stats.topStories as story, i (story.id)}
 					<div class="item-row">
 						<span class="rank">{i + 1}</span>
 						<a href="/item/{story.id}" class="item-title">{story.title}</a>
@@ -172,7 +172,7 @@
 		<section class="chart-section full-width">
 			<h2>Top Comments</h2>
 			<div class="item-list">
-				{#each stats.topComments as comment, i}
+				{#each stats.topComments as comment, i (comment.id)}
 					<div class="item-row">
 						<span class="rank">{i + 1}</span>
 						<a href="/item/{comment.parent}#comment-{comment.id}" class="comment-text">
@@ -183,12 +183,72 @@
 				{/each}
 			</div>
 		</section>
+
+    <section class="db-section">
+      <h2>Search Database (search.sqlite)</h2>
+      <div class="stats-grid" style="margin-bottom: 0px">
+        <div class="stat-card">
+          <div class="stat-value">{stats.searchDbSize}</div>
+          <div class="stat-label">Search DB Size</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{formatNumber(stats.indexedItemsCount)}</div>
+          <div class="stat-label">Indexed Items</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{formatNumber(stats.indexedUsersCount)}</div>
+          <div class="stat-label">Indexed Users</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{stats.searchDbMeta.pageCount}</div>
+          <div class="stat-label">Total Pages</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{stats.syncStatus.totalIndexed}</div>
+          <div class="stat-label">Total Indexed</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{stats.fts5Info.itemsTokenizer}</div>
+          <div class="stat-label">Items Tokenizer</div>
+        </div>
+      </div>
+    </section>
+
+		<section class="chart-section full-width">
+			<h2>Most Common Tokens (Top 20)</h2>
+			{#if stats.commonTokens.length > 0}
+				<div class="token-list">
+					{#each stats.commonTokens as token, i (token)}
+						<div class="token-row">
+							<span class="rank">{i + 1}</span>
+							<span class="token">{token.token}</span>
+							<span class="count">{formatNumber(token.count)}</span>
+						</div>
+					{/each}
+				</div>
+			{:else}
+				<p class="empty-message">No tokens data available</p>
+			{/if}
+		</section>
 	</div>
 {/if}
 
 <style>
 	h1 {
 		margin-bottom: 1.5rem;
+	}
+
+	h2 {
+		margin: 0 0 1rem 0;
+		font-size: 1.25rem;
+	}
+
+  .db-section {
+    grid-column: 1 / -1
+  }
+
+	.db-section h2 {
+		margin-top: 1.5rem;
 	}
 
 	.stats-grid {
@@ -380,6 +440,52 @@
 		color: var(--fg-light);
 		font-size: 0.75rem;
 		white-space: nowrap;
+	}
+
+	.token-list {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+		gap: 0.5rem;
+	}
+
+	.token-row {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.25rem 0.5rem;
+		border-radius: 4px;
+		background: rgba(0, 0, 0, 0.03);
+	}
+
+	:global(html.dark) .token-row {
+		background: rgba(255, 255, 255, 0.03);
+	}
+
+	.token-row .rank {
+		color: var(--fg-light);
+		font-size: 0.75rem;
+		width: 1.5rem;
+	}
+
+	.token-row .token {
+		flex: 1;
+		font-family: monospace;
+		font-size: 0.75rem;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.token-row .count {
+		color: var(--fg-light);
+		font-size: 0.75rem;
+	}
+
+	.empty-message {
+		color: var(--fg-light);
+		font-style: italic;
+		padding: 1rem;
+		text-align: center;
 	}
 
 	@media (max-width: 500px) {
