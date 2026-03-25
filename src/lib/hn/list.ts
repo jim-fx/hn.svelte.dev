@@ -17,7 +17,7 @@ export async function fetchRaw(path: string) {
 			withRetry(() => fetch(url), { retries: 3, delay: 500 })
 				.then((r) => r.json())
 				.then((data) => storeRawCache(path, data))
-				.catch(() => {});
+				.catch((err) => logger.warn(`background refresh raw ${path} failed`, { error: err }));
 		}
 		logger.debug(`cache hit raw ${path}`);
 		return cached.data as ReturnType<typeof response.json>;

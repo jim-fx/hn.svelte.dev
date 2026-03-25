@@ -15,7 +15,9 @@ async function fetchItemInBackground(id: number) {
 		const fresh = await response.json();
 		cache.storeItem(fresh);
 		logger.debug(`background refresh item ${id}`);
-	} catch {}
+	} catch (err) {
+		logger.warn(`background refresh item ${id} failed`, { error: err });
+	}
 }
 
 export async function fetchItem(id: number): Promise<Item> {
@@ -37,9 +39,9 @@ export async function fetchItem(id: number): Promise<Item> {
 	cache.storeItem(item);
 	logger.info(`fetched item ${id}`);
 
-  if(item.by){
-    fetchUser(item.by)
-  }
+	if (item.by) {
+		fetchUser(item.by);
+	}
 
 	return item;
 }
@@ -51,4 +53,3 @@ export async function fetchItems(ids: number[]): Promise<Item[]> {
 		5
 	);
 }
-
