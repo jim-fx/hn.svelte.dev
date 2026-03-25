@@ -1,7 +1,10 @@
 import { HN_BASE_URL, USER_STALE_MS } from './constants';
 import type { User } from './types';
 import { withRetry } from './utils';
-import * as cache from './cache';
+import * as cache from './db';
+import { createLogger } from '$lib/logger';
+
+const logger = createLogger("hn:user");
 
 async function fetchUserInBackground(username: string) {
 	const url = `${HN_BASE_URL}/user/${username}.json`;
@@ -21,10 +24,12 @@ export async function fetchUser(username: string): Promise<User> {
 		return cached;
 	}
 
+  logger.debug(`fetching user ${username}`);
 	const url = `${HN_BASE_URL}/user/${username}.json`;
 	const response = await withRetry(() => fetch(url), { retries: 3, delay: 500 });
 
 	if (!response.ok) {
+    logger.error("failed to fetch user", response.status);
 		throw new Error(`HN API error ${response.status} ${response.statusText} — ${url}`);
 	}
 

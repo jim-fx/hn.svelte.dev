@@ -45,12 +45,12 @@
 	.meta-bar {
 		padding: 1em 0;
 		cursor: pointer;
-		background: 100% 50% no-repeat url(./unfold.svg);
+		background: 100% 50% no-repeat url(/icons/unfold.svg);
 		background-size: 1em 1em;
 	}
 
 	.comment details[open] > summary > .meta-bar {
-		background-image: url(./fold.svg);
+		background-image: url(/icons/fold.svg);
 	}
 
 	.comment details > summary {

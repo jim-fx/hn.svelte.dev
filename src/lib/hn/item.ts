@@ -1,9 +1,11 @@
-import * as cache from './cache';
+import * as cache from './db';
 import type { Item } from './types';
 import { runConcurrently, withRetry } from './utils';
-import { HN_BASE_URL, STALE_MS } from './constants';
-import { logger } from './logger';
+import { HN_BASE_URL, ITEM_STALE_MS } from './constants';
+import { createLogger } from '$lib/logger';
 import { fetchUser } from './user';
+
+const logger = createLogger('hn:item');
 
 async function fetchItemInBackground(id: number) {
 	const url = `${HN_BASE_URL}/item/${id}.json`;
@@ -20,7 +22,7 @@ export async function fetchItem(id: number): Promise<Item> {
 	const url = `${HN_BASE_URL}/item/${id}.json`;
 	const cached = cache.getItem(id);
 	if (cached !== undefined) {
-		const isStale = Date.now() - new Date(cached.cached_at).getTime() > STALE_MS;
+		const isStale = Date.now() - new Date(cached.cached_at).getTime() > ITEM_STALE_MS;
 		if (isStale) fetchItemInBackground(id);
 		// logger.debug(`cache hit item ${id}`);
 		return cached;

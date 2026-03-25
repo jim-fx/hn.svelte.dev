@@ -2,6 +2,7 @@ html {
 	--bg: white;
 	--fg: #333;
 	--fg-light: #666;
+  --border: #ff6600;
 }
 
 html.dark {

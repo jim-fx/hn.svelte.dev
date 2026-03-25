@@ -4,21 +4,23 @@
 </script>
 
 <nav>
-  <div>
-    <img alt="Svelte Hacker News logo" class="icon" src="/favicon.png" />
+	<div>
+		<img alt="Svelte Hacker News logo" class="icon" src="/favicon.png" />
 
-    <ul>
-      <li><a href="/top/1" class:selected={section === 'top'}>top</a></li>
-      <li><a href="/new/1" class:selected={section === 'new'}>new</a></li>
-      <li><a href="/show/1" class:selected={section === 'show'}>show</a></li>
-      <li><a href="/ask/1" class:selected={section === 'ask'}>ask</a></li>
-      <li><a href="/jobs/1" class:selected={section === 'jobs'}>jobs</a></li>
+		<ul>
+			<li><a href="/top/1" class:selected={section === 'top'}>top</a></li>
+			<li><a href="/new/1" class:selected={section === 'new'}>new</a></li>
+			<li><a href="/show/1" class:selected={section === 'show'}>show</a></li>
+			<li><a href="/ask/1" class:selected={section === 'ask'}>ask</a></li>
+			<li><a href="/jobs/1" class:selected={section === 'jobs'}>jobs</a></li>
 
-      <li class="about">
-        <a href="/about" class:selected={section === 'about'}>about</a>
-      </li>
-    </ul>
-  </div>
+			<li><a href="/search" class:selected={section === 'search'}>search</a></li>
+
+			<li class="about">
+				<a href="/about" class:selected={section === 'about'}>about</a>
+			</li>
+		</ul>
+	</div>
 </nav>
 
 <style>
@@ -30,10 +32,10 @@
 		padding: 0 1em;
 	}
 
-  div {
+	div {
 		max-width: 56em;
-    margin: 0 auto;
-  }
+		margin: 0 auto;
+	}
 
 	.icon {
 		display: block;

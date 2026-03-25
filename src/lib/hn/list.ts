@@ -1,15 +1,17 @@
-import { getRawCache, storeRawCache } from './cache';
+import { getRawCache, storeRawCache } from './db';
 import { fetchItemsWithComments } from './comments';
-import { HN_BASE_URL, STALE_MS } from './constants';
+import { HN_BASE_URL, LIST_STALE_MS } from './constants';
 import { fetchItems } from './item';
 import type { StoryType } from './types';
 import { withRetry } from './utils';
-import { logger } from './logger';
+import { createLogger } from '$lib/logger';
+
+const logger = createLogger('hn:list');
 
 export async function fetchRaw(path: string) {
 	const cached = getRawCache(path);
 	if (cached !== undefined) {
-		const isStale = Date.now() - cached.cached_at.getTime() > STALE_MS;
+		const isStale = Date.now() - cached.cached_at.getTime() > LIST_STALE_MS;
 		if (isStale) {
 			const url = `${HN_BASE_URL}${path}`;
 			withRetry(() => fetch(url), { retries: 3, delay: 500 })

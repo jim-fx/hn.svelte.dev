@@ -1,4 +1,4 @@
-import { setupDatabase, getDatabase } from '$lib/hn/cache';
+import { setupDatabase, getDatabase } from '$lib/hn/db';
 import { statSync } from 'fs';
 import { join } from 'path';
 import { DB_DIR } from '$env/static/private';
@@ -31,7 +31,7 @@ function formatBytes(bytes: number): string {
 
 export async function load() {
 	setupDatabase();
-	const db = getDatabase();
+	const db = getDatabase("hn.sqlite");
 
 	const totalItems = (db.prepare('SELECT COUNT(*) as count FROM items').get() as { count: number })
 		.count;

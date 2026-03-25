@@ -1,5 +1,5 @@
 import { fetchItem, fetchItems } from "./item";
-import * as cache from "./cache"
+import * as cache from "./db"
 import type { Comment } from "./types";
 import { runConcurrently } from "./utils";
 
