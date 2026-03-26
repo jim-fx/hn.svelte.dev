@@ -1,4 +1,4 @@
-import { fetchUser } from '$lib/hn';
+import { getUser } from '$lib/db';
 
 export const csr = false;
 
@@ -17,5 +17,5 @@ export async function load({ params, setHeaders, depends }) {
 	// Track dependency for cache invalidation
 	depends(`hn:user:${name}`);
 
-	return fetchUser(name);
+	return getUser(name);
 }
