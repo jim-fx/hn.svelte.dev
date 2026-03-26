@@ -16,8 +16,8 @@
 
 			<li><a href="/search" class:selected={section === 'search'}>search</a></li>
 
-			<li class="about">
-				<a href="/about" class:selected={section === 'about'}>about</a>
+			<li class="dash">
+				<a href="/dash" class:selected={section === 'dash'}>dash</a>
 			</li>
 		</ul>
 	</div>
@@ -65,7 +65,7 @@
 		float: left;
 	}
 
-	.about {
+	.dash {
 		float: right;
 	}
 
