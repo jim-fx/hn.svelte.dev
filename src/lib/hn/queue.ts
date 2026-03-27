@@ -1,5 +1,17 @@
-import WorkerClass from "./queue_backend.ts?nodeWorker";
-const worker = WorkerClass();
+import { dev } from "$app/environment";
+import { Worker } from "node:worker_threads";
+import {existsSync} from "fs";
+function getWorker(): Worker{
+  try {
+    const u = new URL(dev ? "./queue_backend.ts":"./queue_backend.js", import.meta.url);
+    if(existsSync(u)){
+      return new Worker(u);
+    }
+  }  catch { }
+  return {on: () => undefined} as unknown as Worker;
+}
+
+const worker = getWorker();
 
 function cleanup() {
 	worker.terminate();

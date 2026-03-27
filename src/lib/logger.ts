@@ -5,7 +5,7 @@ function log(level: LogLevel, scope: string, ...args: unknown[]) {
 }
 
 export function createLogger(scope: string) {
-  let enabled = 1;
+  let enabled = 0;
 	return {
 		debug: (...args: unknown[]) => enabled && log('debug', scope, ...args),
 		info: (...args: unknown[]) =>  enabled && log('info', scope, ...args),

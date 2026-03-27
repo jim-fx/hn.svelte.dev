@@ -94,8 +94,6 @@ export function getItemsWithComments(ids: number[], type="story") {
     .run(statements.select_items_with_comments)
     .all({ ids: JSON.stringify(ids), type });
 
-  console.log("Get Items /w Comments by Type", {ids, type, rows});
-
   const items = rows.map(deserialise);
 
   const byId = new Map<number, Item & { comments?: Item[] }>();

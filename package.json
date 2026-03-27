@@ -5,7 +5,7 @@
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
-		"build": "vite build",
+    "build": "vite build && vite build --config vite.worker.config.ts",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
@@ -32,6 +32,7 @@
 		"typescript": "^6.0.2",
 		"typescript-eslint": "^8.57.2",
 		"vite": "^8.0.2",
+		"vite-node-worker": "^0.0.2",
 		"vite-plugin-node-worker": "^1.0.6"
 	},
 	"dependencies": {
