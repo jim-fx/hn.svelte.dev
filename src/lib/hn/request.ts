@@ -1,31 +1,20 @@
 import * as db from '$lib/db';
+import { HN_BASE_URL } from './constants';
+import { fetch } from './worker';
 
-export async function request(url: string) {
-	const start = performance.now();
-	const response = await fetch(url);
-	const duration = performance.now() - start;
-
-	// Measure size safely
-	let responseSize: number | null = null;
-
-	const sizeHeader = response.headers.get('content-length');
-	if (sizeHeader) {
-		responseSize = parseInt(sizeHeader, 10);
-	} else {
-		const buffer = await response.clone().arrayBuffer();
-		responseSize = buffer.byteLength;
-	}
+export async function request<T = unknown>(path: string, priority:"high"|"low" = "high") {
+	const response = await fetch<T>(`${HN_BASE_URL}${path}`, priority);
 
 	db.storeRequest({
-		url,
-		status: response.status,
-		duration: Math.floor(duration),
-		responseSize
+		url: path,
+		status: response.httpStatus,
+		duration: Math.floor(response.durationMs),
+		responseSize: response.sizeBytes
 	});
 
-	if (!response.ok) {
-		throw new Error(`HN API error ${response.status} ${response.statusText} — ${url}`);
+	if (response.error) {
+		throw new Error(`HN API error ${response.httpStatus} ${response.error.message} — ${path}`);
 	}
 
-	return response.json();
+	return response.data;
 }

@@ -1,4 +1,3 @@
-import { HN_BASE_URL } from './constants';
 import type { User } from './types';
 import * as db from '$lib/db';
 import { createLogger } from '$lib/logger';
@@ -8,9 +7,9 @@ import { isStale } from './utils';
 const logger = createLogger('hn:user');
 
 async function fetchUserInBackground(username: string) {
-	const url = `${HN_BASE_URL}/user/${username}.json`;
+	const url = `/user/${username}.json`;
 	try {
-		const fresh = await request(url);
+		const fresh = await request<User>(url,"low");
 		db.storeUser(fresh);
 	} catch (err) {
 		logger.warn(`background refresh user ${username} failed`, { error: err });
@@ -25,7 +24,7 @@ export async function fetchUser(username: string): Promise<User> {
 	}
 
 	logger.debug(`fetching user ${username}`);
-	const user = await request(`${HN_BASE_URL}/user/${username}.json`);
+	const user = await request<User>(`/user/${username}.json`);
 	db.storeUser(user);
 
 	return user;

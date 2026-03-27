@@ -1,8 +1,8 @@
 <script lang="ts">
-	import type { Comment } from '$lib/hn';
+	import type { ItemWithComments } from '$lib/hn';
 	import { timeToReadable } from '$lib/utils';
 	import CommentEl from './Comment.svelte';
-	const { comment } = $props<{ comment: Comment }>();
+	const { comment } = $props<{ comment: ItemWithComments }>();
 	const timeAgo = $derived(comment.time ? timeToReadable(comment.time) : '');
 </script>
 

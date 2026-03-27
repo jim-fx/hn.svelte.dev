@@ -5,10 +5,11 @@ function log(level: LogLevel, scope: string, ...args: unknown[]) {
 }
 
 export function createLogger(scope: string) {
+  let silence = true;
 	return {
-		debug: (...args: unknown[]) => log('debug', scope, ...args),
-		info: (...args: unknown[]) => log('info', scope, ...args),
-		warn: (...args: unknown[]) => log('warn', scope, ...args),
-		error: (...args: unknown[]) => log('error', scope, ...args)
+		debug: (...args: unknown[]) => silence && log('debug', scope, ...args),
+		info: (...args: unknown[]) =>  silence && log('info', scope, ...args),
+		warn: (...args: unknown[]) =>  silence && log('warn', scope, ...args),
+		error: (...args: unknown[]) =>  silence && log('error', scope, ...args)
 	};
 }

@@ -1,22 +1,40 @@
-import { Worker } from 'node:worker_threads';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import type { WorkerRequest, WorkerResponse } from './types';
+import WorkerClass from "./worker_backend.ts?nodeWorker";
+const worker = WorkerClass();
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const worker = new Worker(path.resolve(__dirname, './worker.ts'));
+function cleanup() {
+	worker.terminate();
+}
 
-const request: WorkerRequest = {
-	type: 'sum',
-	payload: { a: 2, b: 3 }
-};
-
-export function fetch() {}
-
-export function fetchBackground() {}
-
-worker.postMessage(request);
-
-worker.on('message', (msg: WorkerResponse) => {
-	console.log('Result:', msg.result);
+process.on('exit', cleanup);
+process.on('SIGINT', () => {
+	cleanup();
+	process.exit(0);
 });
+process.on('SIGTERM', () => {
+	cleanup();
+	process.exit(0);
+});
+
+type FetchResult<T> =
+	| { data: T; httpStatus: number; durationMs: number; sizeBytes: number; error?: undefined }
+	| { error: Error; httpStatus: number; durationMs: number; sizeBytes: number; data?: undefined };
+
+const pending = new Map<string, { resolve: (v: any) => void }>();
+
+worker.on('message', (msg) => {
+	const entry = pending.get(msg.url);
+	if (!entry) return;
+	pending.delete(msg.url);
+	entry.resolve(msg);
+});
+
+export function fetch<T>(url: string, priority: 'high' | 'low' = 'high'): Promise<FetchResult<T>> {
+	return new Promise((resolve) => {
+		pending.set(url, { resolve });
+		worker.postMessage({
+			type: 'fetch',
+			url,
+			priority
+		});
+	});
+}

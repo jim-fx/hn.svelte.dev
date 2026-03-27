@@ -1,36 +1,34 @@
 import * as db from '$lib/db';
 import type { Item } from './types';
-import { isStale, runConcurrently } from './utils';
-import { HN_BASE_URL } from './constants';
+import { isStale } from './utils';
 import { createLogger } from '$lib/logger';
 import { fetchUser } from './user';
 import { request } from './request';
 
 const logger = createLogger('hn:item');
 
-async function fetchItemInBackground(id: number) {
-	const url = `${HN_BASE_URL}/item/${id}.json`;
+export async function fetchItemInBackground(id: number) {
 	try {
-		const fresh = await request(url);
+		const fresh = await request<Item>(`/item/${id}.json`,"low");
 		db.storeItem(fresh);
-		logger.debug(`background refresh item ${id}`);
+		logger.debug(`background refresh '${fresh.type}' ${id}`);
 	} catch (err) {
 		logger.warn(`background refresh item ${id} failed`, { error: err });
 	}
 }
 
 export async function fetchItem(id: number): Promise<Item> {
-	const url = `${HN_BASE_URL}/item/${id}.json`;
+	const url = `/item/${id}.json`;
 	const cached = db.getItem(id);
 	if (cached) {
 		if (isStale(cached)) fetchItemInBackground(id);
 		return cached;
 	}
 
-	const item = await request(url);
+	const item = await request<Item>(url);
 	db.storeItem(item);
 
-	logger.info(`fetched item ${id}`);
+	logger.info(`fetched '${item.type}' ${id}`);
 
 	if (item.by) {
 		fetchUser(item.by);
@@ -40,9 +38,5 @@ export async function fetchItem(id: number): Promise<Item> {
 }
 
 export async function fetchItems(ids: number[]): Promise<Item[]> {
-	logger.debug(`fetching ${ids.length} items`);
-	return runConcurrently(
-		ids.map((id) => () => fetchItem(id)),
-		5
-	);
+  return Promise.all(ids.map(id => fetchItem(id)));
 }

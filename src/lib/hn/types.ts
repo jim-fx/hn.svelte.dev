@@ -21,8 +21,8 @@ export type Item = {
 	cached_at: Date;
 };
 
-export type Comment = Item & {
-	comments: Comment[];
+export type ItemWithComments = Item & {
+	comments: ItemWithComments[];
 };
 
 export type User = {

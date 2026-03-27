@@ -152,8 +152,6 @@ export async function load() {
 		return existing || { bucket: b, count: 0 };
 	});
 
-	console.log({ scoreDistribution });
-
 	const topUsers = db
 		.prepare(
 			`
@@ -392,7 +390,6 @@ export async function load() {
 				.all() as { sql: string; count: number }[];
 			return { totalQueries, avgDuration, slowQueries, topQueries };
 		} catch (e) {
-			console.log('FAiled to statistics', { e });
 			return { totalQueries: 0, avgDuration: 0, slowQueries: [], topQueries: [] };
 		}
 	})();

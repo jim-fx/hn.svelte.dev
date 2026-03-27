@@ -6,7 +6,6 @@ let isSetup = false;
 function queryCallback(data: { sql: string; duration: number }) {
 	// Dont track inserts into statistics db because this would cause infinite loops
 	if (data.sql.includes('statistics.')) return;
-	console.log('STORE QUERY', { sql: data.sql });
 	if (isSetup) db.run(sqlStatements.insert_query).run(data);
 }
 db = openDatabase('hn.sqlite', { queryCallback });
