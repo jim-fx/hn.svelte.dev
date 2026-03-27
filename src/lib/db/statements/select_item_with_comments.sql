@@ -12,4 +12,4 @@ WITH RECURSIVE item_tree AS (
   JOIN item_tree t ON i.parent = t.id
 )
 SELECT *
-FROM item_tree WHERE type = :type;
+FROM item_tree;

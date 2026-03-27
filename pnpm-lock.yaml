@@ -67,14 +67,8 @@ importers:
         specifier: ^8.57.2
         version: 8.57.2(eslint@10.1.0)(typescript@6.0.2)
       vite:
-        specifier: ^8.0.2
+        specifier: ^8.0.3
         version: 8.0.3(@types/node@25.5.0)
-      vite-node-worker:
-        specifier: ^0.0.2
-        version: 0.0.2(vite@8.0.3(@types/node@25.5.0))
-      vite-plugin-node-worker:
-        specifier: ^1.0.6
-        version: 1.0.6
 
 packages:
 
@@ -1204,15 +1198,6 @@ packages:
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
 
-  vite-node-worker@0.0.2:
-    resolution: {integrity: sha512-Zv6w0DLSG37bKIcZM7Oc+a4zHQIKeHuz3ss9Gr+PcX4MZ4TRFWMpwNcqUpExuh4UIAz8s87I8NuZh5XgEAiEMA==}
-    peerDependencies:
-      vite: ^7.0.4
-
-  vite-plugin-node-worker@1.0.6:
-    resolution: {integrity: sha512-i4wiOJpkHcMyepBVinuFfEQRTc8XavDWQJctJ3qOBLsnZn2flQL6FFCR0TEHigw9ywJ5fp7dPHWkKByTVQkICQ==}
-    engines: {node: '>=21'}
-
   vite@8.0.3:
     resolution: {integrity: sha512-B9ifbFudT1TFhfltfaIPgjo9Z3mDynBTJSUYxTjOQruf/zHH+ezCQKcoqO+h7a9Pw9Nm/OtlXAiGT1axBgwqrQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
@@ -2308,15 +2293,6 @@ snapshots:
       punycode: 2.3.1
 
   util-deprecate@1.0.2: {}
-
-  vite-node-worker@0.0.2(vite@8.0.3(@types/node@25.5.0)):
-    dependencies:
-      magic-string: 0.30.21
-      vite: 8.0.3(@types/node@25.5.0)
-
-  vite-plugin-node-worker@1.0.6:
-    dependencies:
-      magic-string: 0.30.21
 
   vite@8.0.3(@types/node@25.5.0):
     dependencies:

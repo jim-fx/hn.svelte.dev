@@ -1,5 +1,5 @@
-import { parentPort } from 'worker_threads';
-import { HN_BASE_URL } from './constants';
+import { parentPort } from 'node:worker_threads';
+export const HN_BASE_URL = 'https://hacker-news.firebaseio.com/v0';
 if (!parentPort) {
 	throw new Error('Must be run as worker');
 }

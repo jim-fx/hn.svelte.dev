@@ -58,7 +58,7 @@ export function storeItem(item: Item) {
 }
 
 export function getItemWithComments(id: number) {
-	const rows = db.run(statements.select_item_with_comments).all({ id, type: "story" });
+	const rows = db.run(statements.select_item_with_comments).all({ id });
 
 	if (!rows || rows.length === 0) return undefined;
 
@@ -89,10 +89,10 @@ export function getItemWithComments(id: number) {
 	return root;
 }
 
-export function getItemsWithComments(ids: number[], type="story") {
+export function getItemsWithComments(ids: number[]) {
   const rows = db
     .run(statements.select_items_with_comments)
-    .all({ ids: JSON.stringify(ids), type });
+    .all({ ids: JSON.stringify(ids) });
 
   const items = rows.map(deserialise);
 

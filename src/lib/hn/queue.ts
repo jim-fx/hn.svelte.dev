@@ -8,6 +8,7 @@ function getWorker(): Worker{
       return new Worker(u);
     }
   }  catch { }
+  console.log("Failed to create worker")
   return {on: () => undefined} as unknown as Worker;
 }
 
