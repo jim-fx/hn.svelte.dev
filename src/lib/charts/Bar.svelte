@@ -1,7 +1,3 @@
-<!--
-  @component
-  Generates an SVG bar chart.
--->
 <script lang="ts">
 	import { getContext } from 'svelte';
 

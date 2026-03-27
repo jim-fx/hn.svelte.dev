@@ -3,10 +3,10 @@
 	import type { Readable } from 'svelte/store';
 
 	const { data, xGet, yGet } = getContext<{
-    data: Readable<any[]>, 
-    xGet: Readable<(a:number) => number>, 
-    yGet: Readable<(a:number) => number>
-  }>('LayerCake');
+		data: Readable<any[]>;
+		xGet: Readable<(a: number) => number>;
+		yGet: Readable<(a: number) => number>;
+	}>('LayerCake');
 
 	let {
 		fill = 'none',

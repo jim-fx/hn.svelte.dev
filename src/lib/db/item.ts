@@ -1,7 +1,7 @@
-import type { Item } from "$lib/hn/types";
-import type { SQLInputValue, SQLOutputValue } from "node:sqlite";
-import statements from "./statements";
-import { db } from "./db";
+import type { Item } from '$lib/hn/types';
+import type { SQLInputValue, SQLOutputValue } from 'node:sqlite';
+import statements from './statements';
+import { db } from './db';
 
 function serialise(item: Item): Record<string, SQLInputValue> {
 	return {
@@ -12,7 +12,7 @@ function serialise(item: Item): Record<string, SQLInputValue> {
 		text: item.text ?? null,
 		dead: item.dead ? 1 : 0,
 		parent: item.parent ?? null,
-		poll: "poll" in item ? item.poll as SQLInputValue : null,
+		poll: 'poll' in item ? (item.poll as SQLInputValue) : null,
 		url: item.url ?? null,
 		score: item.score ?? null,
 		title: item.title ?? null,
@@ -48,11 +48,11 @@ function deserialise(row: Record<string, SQLOutputValue | undefined>) {
 	return item as Item;
 }
 export function getItem(id: number) {
-  const row = db.run(statements.select_item).get({id});
+	const row = db.run(statements.select_item).get({ id });
 	return row ? deserialise(row) : undefined;
 }
 
 export function storeItem(item: Item) {
 	if (!item) return;
-  return db.run(statements.upsert_item).run(serialise(item));
+	return db.run(statements.upsert_item).run(serialise(item));
 }

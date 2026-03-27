@@ -21,7 +21,7 @@
 
 {#if context}
 	<g class="y-axis">
-    <line x1="0" x2="0" y1="0" y2={$height} stroke="var(--fg-light)"></line>
+		<line x1="0" x2="0" y1="0" y2={$height} stroke="var(--fg-light)"></line>
 		{#each tickVals as tick}
 			<g
 				transform="translate({$xRange[0]}, {$yScale(tick) +

@@ -1,29 +1,28 @@
 import { getRawCache, storeRawCache } from '$lib/db';
 import { fetchItemsWithComments } from './comments';
-import { HN_BASE_URL, LIST_STALE_MS } from './constants';
+import { HN_BASE_URL } from './constants';
 import { fetchItems } from './item';
 import type { StoryType } from './types';
 import { createLogger } from '$lib/logger';
 import { request } from './request';
+import { isStale } from './utils';
 
 const logger = createLogger('hn:list');
 
+async function fetchInBackground(path: string) {
+	const url = `${HN_BASE_URL}${path}`;
+	const data = await request(url);
+	storeRawCache(path, data);
+}
+
 export async function fetchRaw(path: string) {
 	const cached = getRawCache(path);
-	if (cached !== undefined) {
-		const isStale = Date.now() - cached.cached_at.getTime() > LIST_STALE_MS;
-		if (isStale) {
-			const url = `${HN_BASE_URL}${path}`;
-      const data = await request(url);
-			storeRawCache(path, data)
-      return data;
-		}
-		logger.debug(`cache hit raw ${path}`);
-		return cached.data as ReturnType<typeof response.json>;
+	if (cached) {
+		if (isStale(cached)) fetchInBackground(`${HN_BASE_URL}${path}`);
+		return cached;
 	}
 
-	const url = `${HN_BASE_URL}${path}`;
-	const response = await request(url);
+	const response = await request(`${HN_BASE_URL}${path}`);
 	storeRawCache(path, response);
 	logger.info(`fetched raw ${path}`);
 	return response;

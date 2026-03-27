@@ -37,10 +37,10 @@ export type User = {
 };
 
 export interface WorkerRequest {
-  type: 'sum';
-  payload: { a: number; b: number };
+	type: 'sum';
+	payload: { a: number; b: number };
 }
 
 export interface WorkerResponse {
-  result: number;
+	result: number;
 }

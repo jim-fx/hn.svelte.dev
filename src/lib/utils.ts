@@ -10,30 +10,30 @@ export function timeToReadable(unixSeconds: number): string {
 	if (diff < MINUTE) return 'just now';
 
 	if (diff < HOUR) {
-    const m = Math.floor(diff / MINUTE);
-    return `${m} min${m > 0 ? "s":""} ago`;
-  }
+		const m = Math.floor(diff / MINUTE);
+		return `${m} min${m > 0 ? 's' : ''} ago`;
+	}
 
-	if (diff < DAY){
-    const m = Math.floor(diff / HOUR);
-    return `${m} hour${m > 0 ? "s":""} ago`;
-  }
+	if (diff < DAY) {
+		const m = Math.floor(diff / HOUR);
+		return `${m} hour${m > 0 ? 's' : ''} ago`;
+	}
 
-	if (diff < WEEK){
-    const w = Math.floor(diff / DAY);
-    return `${w} day${w > 0 ? "s":""} ago`;
-  }
+	if (diff < WEEK) {
+		const w = Math.floor(diff / DAY);
+		return `${w} day${w > 0 ? 's' : ''} ago`;
+	}
 
 	if (diff < MONTH) {
-    const w = Math.floor(diff / WEEK);
-    return `${w} week${w > 0 ? "s":""} ago`;
-  }
+		const w = Math.floor(diff / WEEK);
+		return `${w} week${w > 0 ? 's' : ''} ago`;
+	}
 
 	if (diff < YEAR) {
-    const m = Math.floor(diff / MONTH);
-    return `${m} month${m > 0 ? "s":""} ago`;
-  }
+		const m = Math.floor(diff / MONTH);
+		return `${m} month${m > 0 ? 's' : ''} ago`;
+	}
 
-  const y = Math.floor(diff / YEAR);
-	return `${y} year${y > 0 ? "s":""} ago`;
+	const y = Math.floor(diff / YEAR);
+	return `${y} year${y > 0 ? 's' : ''} ago`;
 }

@@ -6,9 +6,8 @@
 
 	const { data } = $props();
 
-
 	let query: string = $state(data.query ?? '');
-  $inspect({first: data.items[0], query})
+	$inspect({ first: data.items[0], query });
 	let searchType: string = $state(data.type ?? 'story');
 	let searchInBody: boolean = $state(data.searchInBody ?? false);
 
@@ -17,12 +16,7 @@
 		const currentQ = page.url.searchParams.get('q');
 		const currentType = page.url.searchParams.get('type') ?? 'story';
 		const currentBody = page.url.searchParams.get('body') === '1';
-		if (
-			currentQ === query &&
-			currentType === searchType &&
-			currentBody === searchInBody 
-		)
-			return;
+		if (currentQ === query && currentType === searchType && currentBody === searchInBody) return;
 		const u = new URL(page.url.toString());
 		u.searchParams.set('q', query);
 		u.searchParams.set('type', searchType);
@@ -33,7 +27,6 @@
 		}
 		goto(u.toString());
 	});
-
 </script>
 
 <div>

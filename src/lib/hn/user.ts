@@ -1,8 +1,9 @@
-import { HN_BASE_URL, USER_STALE_MS } from './constants';
+import { HN_BASE_URL } from './constants';
 import type { User } from './types';
 import * as db from '$lib/db';
 import { createLogger } from '$lib/logger';
 import { request } from './request';
+import { isStale } from './utils';
 
 const logger = createLogger('hn:user');
 
@@ -18,15 +19,14 @@ async function fetchUserInBackground(username: string) {
 
 export async function fetchUser(username: string): Promise<User> {
 	const cached = db.getUser(username);
-	if (cached !== undefined) {
-		const isStale = Date.now() - new Date(cached.cached_at).getTime() > USER_STALE_MS;
-		if (isStale) fetchUserInBackground(username);
+	if (cached) {
+		if (isStale(cached)) fetchUserInBackground(username);
 		return cached;
 	}
 
 	logger.debug(`fetching user ${username}`);
-	const url = `${HN_BASE_URL}/user/${username}.json`;
-	const user = await request(url);
+	const user = await request(`${HN_BASE_URL}/user/${username}.json`);
 	db.storeUser(user);
+
 	return user;
 }

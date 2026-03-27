@@ -1,7 +1,6 @@
 import * as hn from '$lib/hn';
 
 export async function load({ params, setHeaders, depends }) {
-
 	const list = params.list as hn.StoryType;
 	const page = +params.page;
 
@@ -22,7 +21,7 @@ export async function load({ params, setHeaders, depends }) {
 	depends(`hn:list:${list}:${page}`);
 
 	return {
-    list,
-    ... await hn.fetchList(list, page),
-  }
+		list,
+		...(await hn.fetchList(list, page))
+	};
 }

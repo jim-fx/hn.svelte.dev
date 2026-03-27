@@ -1,7 +1,7 @@
 import * as db from '$lib/db';
 import type { Item } from './types';
-import { runConcurrently } from './utils';
-import { HN_BASE_URL, ITEM_STALE_MS } from './constants';
+import { isStale, runConcurrently } from './utils';
+import { HN_BASE_URL } from './constants';
 import { createLogger } from '$lib/logger';
 import { fetchUser } from './user';
 import { request } from './request';
@@ -19,17 +19,15 @@ async function fetchItemInBackground(id: number) {
 	}
 }
 
-
 export async function fetchItem(id: number): Promise<Item> {
 	const url = `${HN_BASE_URL}/item/${id}.json`;
 	const cached = db.getItem(id);
-	if (cached !== undefined) {
-		const isStale = Date.now() - new Date(cached.cached_at).getTime() > ITEM_STALE_MS;
-		if (isStale) fetchItemInBackground(id);
+	if (cached) {
+		if (isStale(cached)) fetchItemInBackground(id);
 		return cached;
 	}
 
-  const item = await request(url);
+	const item = await request(url);
 	db.storeItem(item);
 
 	logger.info(`fetched item ${id}`);

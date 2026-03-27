@@ -4,25 +4,19 @@ import { fileURLToPath } from 'node:url';
 import type { WorkerRequest, WorkerResponse } from './types';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const worker = new Worker(
-  path.resolve(__dirname, './worker.ts'),
-);
+const worker = new Worker(path.resolve(__dirname, './worker.ts'));
 
 const request: WorkerRequest = {
-  type: 'sum',
-  payload: { a: 2, b: 3 }
+	type: 'sum',
+	payload: { a: 2, b: 3 }
 };
 
-export function fetch(){
+export function fetch() {}
 
-}
-
-export function fetchBackground(){
-
-}
+export function fetchBackground() {}
 
 worker.postMessage(request);
 
 worker.on('message', (msg: WorkerResponse) => {
-  console.log('Result:', msg.result);
+	console.log('Result:', msg.result);
 });

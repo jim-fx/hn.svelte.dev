@@ -1,7 +1,7 @@
-import type { User } from "$lib/hn/types";
-import type { SQLInputValue, SQLOutputValue } from "node:sqlite";
-import sqlStatements from "./statements";
-import { db } from "./db";
+import type { User } from '$lib/hn/types';
+import type { SQLInputValue, SQLOutputValue } from 'node:sqlite';
+import sqlStatements from './statements';
+import { db } from './db';
 
 function serialiseUser(user: User): Record<string, SQLInputValue> {
 	return {
@@ -25,7 +25,7 @@ function deserialiseUser(row: Record<string, SQLOutputValue | undefined>): User 
 	};
 }
 export function getUser(id: string) {
-  const row = db.run(sqlStatements.select_user).get({id});
+	const row = db.run(sqlStatements.select_user).get({ id });
 	return row ? deserialiseUser(row) : undefined;
 }
 

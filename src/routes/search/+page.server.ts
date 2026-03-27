@@ -1,4 +1,4 @@
-import * as db from "$lib/db";
+import * as db from '$lib/db';
 import type { Item, User } from '$lib/hn';
 
 type StoryResult = { type: 'story'; items: Item[] };

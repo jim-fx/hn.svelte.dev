@@ -1,7 +1,3 @@
-<!--
-  @component
-  Generates an SVG x-axis
--->
 <script lang="ts">
 	import { getContext } from 'svelte';
 
@@ -35,6 +31,6 @@
 				</text>
 			</g>
 		{/each}
-		<line x1="0" x2={$width+1} y1={bottomY} y2={bottomY} stroke="var(--fg-light)"></line>
+		<line x1="0" x2={$width + 1} y1={bottomY} y2={bottomY} stroke="var(--fg-light)"></line>
 	</g>
 {/if}
