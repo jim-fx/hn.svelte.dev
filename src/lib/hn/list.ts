@@ -1,10 +1,11 @@
 import { getRawCache, storeRawCache, type RawRow } from '$lib/db';
-import { fetchItemWithComments } from './comments';
+import * as db from "$lib/db"
 import { fetchItems } from './item';
 import type { StoryType } from './types';
 import { createLogger } from '$lib/logger';
 import { request } from './request';
 import { isStale } from './utils';
+import { fetchItemWithComments } from './comments';
 
 const logger = createLogger('hn:list');
 
@@ -25,7 +26,7 @@ export async function fetchRaw(path: string) {
 	return response;
 }
 
-export async function fetchListIds(list: StoryType) {
+export async function fetchListIds(list: StoryType):Promise<number[]> {
 	const path = `/${list}stories.json`;
 	logger.debug(`fetching list ids for ${list}`);
 	const res = await fetchRaw(path);
@@ -44,9 +45,16 @@ export async function fetchList(list: StoryType, page = 1, perPage = 30) {
 	const end = start + perPage;
 
 	const allIds = await fetchListIds(list);
-	const pageIds = allIds.slice(start, end);
-
-  const items = await Promise.all(pageIds.map((id:number) => fetchItemWithComments(id)));
+	const pageIds = new Set(allIds.slice(start, end));
+  const items = db.getItemsWithComments([...pageIds.values()]);
+  const missingIds = new Set<number>();
+  for(const item of items){
+    if(item?.id && !pageIds.has(item?.id)){
+      missingIds.add(item.id)
+    }
+  }
+  const missingItems = await Promise.all(missingIds.values().map(id => fetchItemWithComments(id)));
+  items.push(...missingItems);
 
 	const filtered = items.filter((item) => item && !item.dead && !item.deleted);
 	logger.info(`fetched list ${list} page ${page}: ${filtered.length} items`);

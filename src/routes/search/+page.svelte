@@ -6,8 +6,6 @@
 
 	const { data } = $props();
 
-  console.log({data});
-
 	let query: string = $state(data.query ?? '');
 	let searchType: string = $state(data.type ?? 'story');
 	let searchInBody: boolean = $state(data.searchInBody ?? false);

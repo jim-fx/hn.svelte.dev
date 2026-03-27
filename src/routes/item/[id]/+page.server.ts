@@ -15,9 +15,5 @@ export async function load({ params, setHeaders, depends }) {
 	// Track dependency for cache invalidation
 	depends(`hn:item:${id}`);
 
-  const res = await hn.fetchItemWithComments(+id);
-
-  console.log(res);
-
-	return res; 
+  return hn.fetchItemWithComments(+id);
 }
