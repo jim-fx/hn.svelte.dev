@@ -6,8 +6,9 @@
 
 	const { data } = $props();
 
+  console.log({data});
+
 	let query: string = $state(data.query ?? '');
-	$inspect({ first: data.items[0], query });
 	let searchType: string = $state(data.type ?? 'story');
 	let searchInBody: boolean = $state(data.searchInBody ?? false);
 
@@ -49,8 +50,19 @@
 	{/if}
 </div>
 
+{#if data.durationSearchMs}
+  <div class="search-stats">
+    <span>
+      search {data.durationSearchMs.toFixed(0) }<i>ms</i>
+    </span>
+    <span>
+      highlight {data.durationHighlightMs.toFixed(0) }<i>ms</i>
+    </span>
+  </div>
+{/if}
+
 {#if data.type === 'user'}
-	{#each data.items as user, i}
+	{#each data.results as user, i}
 		<article>
 			<h2>
 				<a href="/user/{user.id}">
@@ -77,7 +89,7 @@
 		</article>
 	{/each}
 {:else if data.type === 'comment'}
-	{#each data.items as item, i}
+	{#each data.results as item, i}
 		{#if item}
 			<article>
 				<h2>
@@ -101,7 +113,7 @@
 		{/if}
 	{/each}
 {:else}
-	{#each data.items as item, i}
+	{#each data.results as item, i}
 		{#if item}
 			<ItemSummary {item} index={i} showBodyPreview={searchInBody} />
 		{/if}
@@ -197,4 +209,16 @@
 		width: 0.75em;
 		line-height: 1;
 	}
+
+  .search-stats {
+      display: flex;
+      gap: 10px;
+    }
+
+  .search-stats > span {
+      background-color: var(--fg-lighter);
+      font-size: 10px;
+      padding: 2px 4px;
+      border-radius: 5px;
+  }
 </style>

@@ -1,4 +1,4 @@
-import type { Item } from '$lib/hn/types';
+import type { Item, ItemWithComments } from '$lib/hn/types';
 import type { SQLInputValue, SQLOutputValue } from 'node:sqlite';
 import statements from './statements';
 import { db } from './db';
@@ -55,4 +55,36 @@ export function getItem(id: number) {
 export function storeItem(item: Item) {
 	if (!item) return;
 	return db.run(statements.upsert_item).run(serialise(item));
+}
+
+export function getItemWithComments(id: number) {
+	const rows = db.run(statements.select_item_with_comments).all({ id });
+
+	if (!rows || rows.length === 0) return undefined;
+
+	const items = rows.map(deserialise);
+
+	const map = new Map<number, Item & { comments?: Item[] }>();
+
+	for (const item of items) map.set(item.id, item);
+
+	let root: ItemWithComments | undefined;
+
+	// attach children
+	for (const item of items) {
+		if (item.id === id) {
+			root = item as ItemWithComments;
+			continue;
+		}
+
+		if (item.parent != null) {
+			const parent = map.get(item.parent);
+			if (parent) {
+				parent.comments ??= [];
+				parent.comments.push(item);
+			}
+		}
+	}
+
+	return root;
 }

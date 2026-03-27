@@ -2,6 +2,7 @@ html {
 	--bg: white;
 	--fg: #333;
 	--fg-light: #666;
+	--fg-lighter: #444;
 	--border: #ff6600;
 	--highlight: #ffeb3b;
 }

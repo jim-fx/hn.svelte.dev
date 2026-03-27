@@ -42,11 +42,16 @@ type SearchItemRow = {
 	id: number;
 	body_snippet: string;
 };
+
 export async function searchItems(query: string, searchInBody: boolean = false) {
 	const limit = 50;
+
+	const t0 = performance.now();
+
 	let items: (Item | undefined)[];
 	let bodySnippets: Record<number, string> = {};
 	const useFTS = query.length >= 3;
+
 	const searchSql = useFTS
 		? searchInBody
 			? statements.search_story_body
@@ -54,36 +59,52 @@ export async function searchItems(query: string, searchInBody: boolean = false) 
 		: searchInBody
 			? statements.search_story_body_like
 			: statements.search_story_like;
+
 	const rows = db
 		.run<SearchItemRow>(searchSql)
 		.all({ query: useFTS ? query : `%${query}%`, limit });
+
+	const t1 = performance.now(); // search done
+
 	const ids = [...new Set(rows.map((row) => row.id))];
-	logger.info('LIKE', { ids, query, searchInBody });
 	items = ids.map((id) => getItem(id));
+
 	rows.forEach((row) => {
 		bodySnippets[row.id] = row.body_snippet;
 	});
+
 	const lowerQuery = query.toLowerCase();
 	const results: Item[] = [];
+
 	for (const item of items) {
 		if (!item) continue;
+
 		const matchedTitle = item.title?.toLowerCase().includes(lowerQuery)
 			? createHighlightedTitle(item.title, query)
 			: item.title;
-		let matchedBody = bodySnippets[item.id] ? bodySnippets[item.id] : undefined;
+
+		let matchedBody = bodySnippets[item.id];
 		if (matchedBody) {
 			if (!useFTS) {
 				matchedBody = createSnippet(matchedBody, query);
 			}
 			matchedBody = createHighlightedBody(matchedBody, query);
 		}
+
 		results.push({
 			...item,
 			matchedTitle,
 			matchedBody
 		});
 	}
-	return results;
+
+	const t2 = performance.now(); // highlight done
+
+	return {
+		results,
+		durationSearchMs: t1 - t0,
+		durationHighlightMs: t2 - t1
+	};
 }
 
 type SearchUserRow = {
@@ -91,12 +112,16 @@ type SearchUserRow = {
 	about_snippet: string;
 };
 
-export async function searchUsers(query: string, searchInAbout: boolean = false): Promise<User[]> {
+export async function searchUsers(query: string, searchInAbout: boolean = false) {
 	const limit = 50;
+
+	const t0 = performance.now();
+
 	let users: User[];
 	let aboutSnippets: Record<string, string> = {};
 
 	const useFts = query.length >= 3;
+
 	const searchQuery = useFts
 		? searchInAbout
 			? statements.search_user_about
@@ -108,18 +133,23 @@ export async function searchUsers(query: string, searchInAbout: boolean = false)
 	const rows = db
 		.run<SearchUserRow>(searchQuery)
 		.all({ query: useFts ? query : `%${query}%`, limit });
+
+	const t1 = performance.now();
+
 	const ids = [...new Set(rows.map((row) => row.id))];
-	logger.info('LIKE user about', { ids, query });
 	users = ids.map((id) => getUser(id)).filter((u): u is User => u !== undefined);
+
 	rows.forEach((row) => {
 		aboutSnippets[row.id] = row.about_snippet;
 	});
 
 	const lowerQuery = query.toLowerCase();
-	return users.map((user) => {
+
+	const results = users.map((user) => {
 		const matchedId = user.id.toLowerCase().includes(lowerQuery)
 			? user.id.replace(new RegExp(`(${escapeRegex(query)})`, 'gi'), '<mark>$1</mark>')
 			: undefined;
+
 		let matchedAbout = aboutSnippets[user.id];
 		if (matchedAbout && query.length < 3) {
 			matchedAbout = matchedAbout.replace(
@@ -127,26 +157,44 @@ export async function searchUsers(query: string, searchInAbout: boolean = false)
 				'<mark>$1</mark>'
 			);
 		}
+
 		return {
 			...user,
 			matchedId,
 			matchedAbout
 		};
 	});
+
+	const t2 = performance.now();
+
+	return {
+		results,
+		durationSearchMs: t1 - t0,
+		durationHighlightMs: t2 - t1
+	};
 }
 
-export async function searchComments(query: string): Promise<Item[]> {
+export async function searchComments(query: string) {
 	const limit = 50;
-	let items: (Item | undefined)[];
-	const searchSql = query.length < 3 ? statements.search_comment_like : statements.search_comment;
+
+	const t0 = performance.now();
+
+	const searchSql =
+		query.length < 3 ? statements.search_comment_like : statements.search_comment;
+
 	const rows = db.run(searchSql).all({ query: `%${query}%`, limit });
+
+	const t1 = performance.now();
+
 	const ids = [...new Set(rows.map((row) => row['id'] as number))];
-	logger.info('LIKE comment', { ids, query });
-	items = ids.map((id) => getItem(id));
+	const items = ids.map((id) => getItem(id));
+
 	const lowerQuery = query.toLowerCase();
 	const results: Item[] = [];
+
 	for (const item of items) {
 		if (!item) continue;
+
 		results.push({
 			...item,
 			matchedTitle: item.text?.toLowerCase().includes(lowerQuery)
@@ -154,5 +202,12 @@ export async function searchComments(query: string): Promise<Item[]> {
 				: item.text
 		});
 	}
-	return results;
+
+	const t2 = performance.now();
+
+	return {
+		results,
+		durationSearchMs: t1 - t0,
+		durationHighlightMs: t2 - t1
+	};
 }

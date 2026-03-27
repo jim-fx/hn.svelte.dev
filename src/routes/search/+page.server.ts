@@ -28,14 +28,14 @@ export async function load({ url }: { url: URL }): Promise<SearchResult> {
 
 	if (searchType === 'user') {
 		const users = await db.searchUsers(query, searchInAbout);
-		return { type: 'user', items: users, query, searchInBody, searchInAbout };
+		return { type: 'user', ...users, query, searchInBody, searchInAbout };
 	}
 
 	if (searchType === 'comment') {
 		const comments = await db.searchComments(query);
-		return { type: 'comment', items: comments, query, searchInBody, searchInAbout };
+		return { type: 'comment', ...comments, query, searchInBody, searchInAbout };
 	}
 
 	const items = await db.searchItems(query, searchInBody);
-	return { type: 'story', items, query, searchInBody, searchInAbout };
+	return { type: 'story', ...items, query, searchInBody, searchInAbout };
 }

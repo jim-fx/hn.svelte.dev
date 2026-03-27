@@ -22,7 +22,7 @@
 				{@html comment.text}
 			</div>
 
-			{#if comment.comments.length > 0}
+			{#if comment?.comments?.length}
 				<ul class="children">
 					{#each comment.comments as child}
 						<li><CommentEl comment={child} /></li>
@@ -88,7 +88,7 @@
 	}
 
 	.body {
-		padding-bottom: 5px;
+		padding-bottom: 15px;
 	}
 
 	/* prevent crazy overflow layout bug on mobile */

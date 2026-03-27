@@ -1,5 +1,5 @@
 import { getRawCache, storeRawCache, type RawRow } from '$lib/db';
-import { fetchItemsWithComments } from './comments';
+import { fetchItemWithComments } from './comments';
 import { fetchItems } from './item';
 import type { StoryType } from './types';
 import { createLogger } from '$lib/logger';
@@ -45,7 +45,8 @@ export async function fetchList(list: StoryType, page = 1, perPage = 30) {
 
 	const allIds = await fetchListIds(list);
 	const pageIds = allIds.slice(start, end);
-	const items = await fetchItemsWithComments(pageIds);
+
+  const items = await Promise.all(pageIds.map((id:number) => fetchItemWithComments(id)));
 
 	const filtered = items.filter((item) => item && !item.dead && !item.deleted);
 	logger.info(`fetched list ${list} page ${page}: ${filtered.length} items`);

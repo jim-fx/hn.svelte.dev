@@ -38,8 +38,8 @@
 			{timeAgo}
 			|
 			<a href="/item/{item.id}">
-				{item.comments?.length}
-				{item.comments?.length === 1 ? 'comment' : 'comments'}
+				{item.descendants}
+				{item.descentands === 1 ? 'comment' : 'comments'}
 			</a>
 		</p>
 	{/if}

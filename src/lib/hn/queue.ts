@@ -1,4 +1,4 @@
-import WorkerClass from "./worker_backend.ts?nodeWorker";
+import WorkerClass from "./queue_backend.ts?nodeWorker";
 const worker = WorkerClass();
 
 function cleanup() {

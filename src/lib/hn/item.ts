@@ -18,23 +18,17 @@ export async function fetchItemInBackground(id: number) {
 }
 
 export async function fetchItem(id: number): Promise<Item> {
-	const url = `/item/${id}.json`;
-	const cached = db.getItem(id);
-	if (cached) {
-		if (isStale(cached)) fetchItemInBackground(id);
-		return cached;
-	}
-
-	const item = await request<Item>(url);
-	db.storeItem(item);
-
-	logger.info(`fetched '${item.type}' ${id}`);
-
-	if (item.by) {
-		fetchUser(item.by);
-	}
-
-	return item;
+  const url = `/item/${id}.json`;
+  const cached = db.getItem(id);
+  if (cached) {
+    if (isStale(cached)) fetchItemInBackground(id);
+    return cached;
+  }
+  const item = await request<Item>(url);
+  db.storeItem(item);
+  logger.info(`fetched '${item.type}' ${id}`);
+  if (item.by) fetchUser(item.by);
+  return item;
 }
 
 export async function fetchItems(ids: number[]): Promise<Item[]> {

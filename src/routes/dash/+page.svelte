@@ -31,8 +31,6 @@
 		stats?.scoreDistribution.map((d) => ({ x: d.bucket, y: d.count })) ?? []
 	);
 
-	$inspect({ barData });
-
 	const barYScale = $derived(() =>
 		scaleBand()
 			.domain(['0', '1', '2-9', '10-49', '50-99', '100-499', '500-999', '1000+'])
@@ -305,6 +303,7 @@
 						<div class="query-row">
 							<span class="count">{formatNumber(query.count)}</span>
 							<span class="sql">{query.sql}</span>
+							<span class="duration">{query.duration.toFixed(0)}ms avg</span>
 						</div>
 					{/each}
 				</div>
@@ -358,7 +357,7 @@
 
 	.stat-card {
 		background: var(--bg);
-		border: 1px solid var(--fg-light);
+		border: 1px solid var(--fg-lighter);
 		border-radius: 8px;
 		padding: 1.5rem;
 		text-align: center;
@@ -391,7 +390,7 @@
 
 	.chart-section {
 		background: var(--bg);
-		border: 1px solid var(--fg-light);
+		border: 1px solid var(--fg-lighter);
 		border-radius: 8px;
 		padding: 1.5rem;
 	}
@@ -512,17 +511,6 @@
 	}
 
 	.item-title:hover {
-		text-decoration: underline;
-	}
-
-	.comment-text {
-		color: var(--fg);
-		text-decoration: none;
-		font-size: 0.875rem;
-		line-height: 1.4;
-	}
-
-	.comment-text:hover {
 		text-decoration: underline;
 	}
 

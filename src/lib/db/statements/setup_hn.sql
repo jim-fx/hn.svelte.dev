@@ -24,6 +24,12 @@ CREATE TABLE IF NOT EXISTS items (
   cached_at   INTEGER NOT NULL  -- Unix timestamp (ms) of last upsert
 );
 
+CREATE INDEX IF NOT EXISTS idx_items_type ON items(type);
+CREATE INDEX IF NOT EXISTS idx_items_by ON items(by);
+CREATE INDEX IF NOT EXISTS idx_items_time ON items(time DESC);
+CREATE INDEX IF NOT EXISTS idx_items_parent ON items(parent);
+CREATE INDEX IF NOT EXISTS idx_items_score ON items(score DESC);
+
 CREATE TABLE IF NOT EXISTS raw_cache (
   path        TEXT PRIMARY KEY,
   data        TEXT NOT NULL,
@@ -38,3 +44,4 @@ CREATE TABLE IF NOT EXISTS users (
   submitted   TEXT,            -- JSON array of integers
   cached_at   INTEGER NOT NULL -- Unix timestamp (ms) of last upsert
 );
+

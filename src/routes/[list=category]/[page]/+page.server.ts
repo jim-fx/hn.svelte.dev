@@ -22,6 +22,6 @@ export async function load({ params, setHeaders, depends }) {
 
 	return {
 		list,
-		...(await hn.fetchList(list, page))
+    ...(await hn.fetchList(list, page))
 	};
 }

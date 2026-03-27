@@ -52,7 +52,7 @@ interface Stats {
 		totalQueries: number;
 		avgDuration: number;
 		slowQueries: { sql: string; duration: number }[];
-		topQueries: { sql: string; count: number }[];
+		topQueries: { sql: string; count: number, duration: number }[];
 	};
 	statisticsDbSize: string;
 }
@@ -380,7 +380,7 @@ export async function load() {
 			const topQueries = db
 				.prepare(
 					`
-				SELECT sql, COUNT(*) as count
+				SELECT sql, COUNT(*) as count, AVG(duration) as duration
 				FROM statistics.queries
 				GROUP BY sql
 				ORDER BY count DESC
