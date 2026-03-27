@@ -52,7 +52,7 @@ interface Stats {
 		totalQueries: number;
 		avgDuration: number;
 		slowQueries: { sql: string; duration: number }[];
-		topQueries: { sql: string; count: number, duration: number }[];
+		topQueries: { sql: string; count: number; duration: number }[];
 	};
 	statisticsDbSize: string;
 }
@@ -387,7 +387,7 @@ export async function load() {
 				LIMIT 10
 			`
 				)
-				.all() as { sql: string; count: number }[];
+				.all() as { sql: string; count: number; duration: number }[];
 			return { totalQueries, avgDuration, slowQueries, topQueries };
 		} catch (e) {
 			return { totalQueries: 0, avgDuration: 0, slowQueries: [], topQueries: [] };

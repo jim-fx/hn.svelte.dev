@@ -86,10 +86,6 @@
 	}
 
 	@media (min-width: 400px) {
-		.icon {
-			margin: 0 0.5em 0 0;
-		}
-
 		li {
 			display: inline-block;
 		}

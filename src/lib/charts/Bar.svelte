@@ -1,7 +1,15 @@
 <script lang="ts">
 	import { getContext } from 'svelte';
+	import type { SvelteComponent } from 'svelte';
 
-	const { data, xGet, yGet, xScale, yScale } = getContext('LayerCake');
+	interface LayerCakeContext {
+		data: any;
+		xGet: any;
+		yGet: any;
+		xScale: any;
+		yScale: any;
+	}
+	const { data, xGet, yGet, xScale, yScale } = getContext<LayerCakeContext>('LayerCake');
 
 	let { fill = '#4ecdc4' }: { fill?: string } = $props();
 </script>

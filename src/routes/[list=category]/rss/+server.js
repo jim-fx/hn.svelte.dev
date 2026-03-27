@@ -37,8 +37,9 @@ const render = (list, items) => `<?xml version="1.0" encoding="UTF-8" ?>
  * @type {import('./$types').RequestHandler}
  */
 export async function GET({ params }) {
-	const { items } = await fetchList(params.list, 1);
-	const feed = render(params.list, items);
+	const { items } = await fetchList(/** @type {import('$lib/hn').StoryType} */ (params.list), 1);
+	// @ts-ignore - items may contain undefined but filter(Boolean) removes them
+	const feed = render(params.list, items.filter(Boolean));
 
 	return new Response(feed, {
 		headers: {

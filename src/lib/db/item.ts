@@ -90,36 +90,35 @@ export function getItemWithComments(id: number) {
 }
 
 export function getItemsWithComments(ids: number[]) {
-  const rows = db
-    .run(statements.select_items_with_comments)
-    .all({ ids: JSON.stringify(ids) });
+	const rows = db.run(statements.select_items_with_comments).all({ ids: JSON.stringify(ids) });
 
-  const items = rows.map(deserialise);
+	const items = rows.map(deserialise);
 
-  const byId = new Map<number, Item & { comments?: Item[] }>();
-  const roots = new Map<number, ItemWithComments>();
+	const byId = new Map<number, Item & { comments?: Item[] }>();
+	const roots = new Map<number, ItemWithComments>();
 
-  for (const item of items) {
-    byId.set(item.id, item);
-  }
+	for (const item of items) {
+		byId.set(item.id, item);
+	}
 
-  for (const item of items) {
-    const row = rows.find(r => r.id === item.id); // or include root_id in deserialise
-    const rootId = row.root_id as number;
+	for (const item of items) {
+		const row = rows.find((r) => r.id === item.id); // or include root_id in deserialise
+		if (!row) continue;
+		const rootId = row.root_id as number;
 
-    if (item.id === rootId) {
-      roots.set(rootId, item as ItemWithComments);
-      continue;
-    }
+		if (item.id === rootId) {
+			roots.set(rootId, item as ItemWithComments);
+			continue;
+		}
 
-    if (item.parent != null) {
-      const parent = byId.get(item.parent);
-      if (parent) {
-        parent.comments ??= [];
-        parent.comments.push(item);
-      }
-    }
-  }
+		if (item.parent != null) {
+			const parent = byId.get(item.parent);
+			if (parent) {
+				parent.comments ??= [];
+				parent.comments.push(item);
+			}
+		}
+	}
 
-  return ids.map(id => roots.get(id)).filter(Boolean);
+	return ids.map((id) => roots.get(id)).filter(Boolean);
 }

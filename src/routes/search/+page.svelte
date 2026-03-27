@@ -6,8 +6,11 @@
 
 	const { data } = $props();
 
-	let query: string = $state(data.query ?? '');
+	// svelte-ignore state_referenced_locally
+  let query: string = $state(data.query ?? '');
+	// svelte-ignore state_referenced_locally
 	let searchType: string = $state(data.type ?? 'story');
+	// svelte-ignore state_referenced_locally
 	let searchInBody: boolean = $state(data.searchInBody ?? false);
 
 	$effect(() => {
@@ -29,6 +32,7 @@
 </script>
 
 <div>
+	<!-- svelte-ignore a11y_autofocus -->
 	<input type="text" bind:value={query} placeholder="Search" autofocus />
 	<select bind:value={searchType}>
 		<option value="story">Stories</option>
