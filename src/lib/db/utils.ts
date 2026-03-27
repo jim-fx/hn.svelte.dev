@@ -74,6 +74,7 @@ export function openDatabase(
 						logger.error('failed to run statement.all', { e, statement, inputs });
 						throw e;
 					} finally {
+            logger.debug("run statement", {sql: statement.expandedSQL, inputs})
 						const duration = performance.now() - start;
 						dbOpts?.queryCallback?.({ sql: statement.sourceSQL, duration });
 					}

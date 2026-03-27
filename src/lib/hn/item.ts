@@ -11,7 +11,6 @@ export async function fetchItemInBackground(id: number) {
 	try {
 		const fresh = await request<Item>(`/item/${id}.json`,"low");
 		db.storeItem(fresh);
-		logger.debug(`background refresh '${fresh.type}' ${id}`);
 	} catch (err) {
 		logger.warn(`background refresh item ${id} failed`, { error: err });
 	}

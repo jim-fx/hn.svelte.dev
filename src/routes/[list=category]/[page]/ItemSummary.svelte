@@ -106,7 +106,7 @@
 		font-size: 1.6em;
 		font-weight: 200;
 		color: var(--fg-light);
-		left: 0.2em;
+		left: 0em;
 		top: 0;
 		text-align: right;
 		width: 0.75em;

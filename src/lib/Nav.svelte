@@ -4,55 +4,47 @@
 </script>
 
 <nav>
-	<div>
-		<img alt="Svelte Hacker News logo" class="icon" src="/favicon.png" />
+  <div>
+    <ul>
+      <li><a href="/top/1" class:selected={section === 'top'}>top</a></li>
+      <li><a href="/new/1" class:selected={section === 'new'}>new</a></li>
+      <li><a href="/show/1" class:selected={section === 'show'}>show</a></li>
+      <li><a href="/ask/1" class:selected={section === 'ask'}>ask</a></li>
 
-		<ul>
-			<li><a href="/top/1" class:selected={section === 'top'}>top</a></li>
-			<li><a href="/new/1" class:selected={section === 'new'}>new</a></li>
-			<li><a href="/show/1" class:selected={section === 'show'}>show</a></li>
-			<li><a href="/ask/1" class:selected={section === 'ask'}>ask</a></li>
-			<li><a href="/jobs/1" class:selected={section === 'jobs'}>jobs</a></li>
+      <li><a href="/search" class:selected={section === 'search'}>search</a></li>
 
-			<li><a href="/search" class:selected={section === 'search'}>search</a></li>
-
-			<li class="dash">
-				<a href="/dash" class:selected={section === 'dash'}>dash</a>
-			</li>
-		</ul>
-	</div>
+      <li class="dash">
+        <a href="/dash" class:selected={section === 'dash'}>dash</a>
+      </li>
+    </ul>
+  </div>
 </nav>
 
 <style>
 	nav {
-		/* background-color: rgba(255, 102, 0, 0.05); */
 		border-bottom: 1px solid #ff6600;
 		color: var(--fg-light);
 		font-weight: 300;
-		padding: 0 1em;
 	}
 
-	div {
-		max-width: 56em;
-		margin: 0 auto;
+	nav > div {
+    max-width: 56em;
+    margin: 0 auto;
 	}
-
-	.icon {
-		display: block;
-		width: 1em;
-		height: 1em;
-		float: left;
-		font-size: 2em;
-		position: relative;
-		top: 0.4em;
-		box-sizing: border-box;
-		margin: 0 0.5em 0 0;
-	}
+  nav > div > ul {
+    padding-inline: 2em;
+  }
 
 	ul {
 		margin: 0;
-		padding: 0;
 	}
+
+  ul > *:first-child > a {
+    padding-left: 0px;
+  }
+  ul > *:last-child > a {
+    padding-right: 0px;
+  }
 
 	ul::after {
 		content: '';

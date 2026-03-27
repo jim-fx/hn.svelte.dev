@@ -2,11 +2,7 @@
 	import ItemSummary from './ItemSummary.svelte';
 
 	const { data } = $props();
-
-	// Get list and page from the URL - they come from the page params
-
 	const PAGE_SIZE = 30;
-
 	const start = $derived(1 + (data.page - 1) * PAGE_SIZE);
 	const next = $derived(`/${data.list}/${data.page + 1}`);
 </script>

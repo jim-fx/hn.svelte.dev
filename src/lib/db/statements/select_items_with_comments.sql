@@ -13,5 +13,5 @@ WITH RECURSIVE item_tree AS (
 )
 SELECT *
 FROM item_tree
-WHERE dead IS NOT 1 AND deleted IS NOT 1
+WHERE type = :type AND dead IS NOT 1 AND deleted IS NOT 1
 ORDER BY root_id, time;
