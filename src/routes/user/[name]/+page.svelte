@@ -1,29 +1,29 @@
-<script>
+<script lang="ts">
 	import { timeToReadable } from '$lib/utils';
-	const { data: user } = $props();
-	const createdAgo = $derived(user.created ? timeToReadable(user.created) : '');
+	const { data } = $props();
+	const createdAgo = $derived(data.created ? timeToReadable(data.created) : '');
 </script>
 
 <svelte:head>
-	<title>{user.id} • Svelte Hacker News</title>
+	<title>{data.name} • Svelte Hacker News</title>
 </svelte:head>
 
-<h1>{user.id}</h1>
+<h1>{data.name}</h1>
 
 <div>
 	<p>
-		...joined <strong>{createdAgo}</strong>, and has <strong>{user.karma}</strong> karma
+		...joined <strong>{createdAgo}</strong>, and has <strong>{data.karma}</strong> karma
 	</p>
 
 	<p>
-		<a href="https://news.ycombinator.com/submitted?id={user.id}">submissions</a> /
-		<a href="https://news.ycombinator.com/threads?id={user.id}">comments</a> /
-		<a href="https://news.ycombinator.com/favorites?id={user.id}">favourites</a>
+		<a href="https://news.ycombinator.com/submitted?id={data.id}">submissions</a> /
+		<a href="https://news.ycombinator.com/threads?id={data.id}">comments</a> /
+		<a href="https://news.ycombinator.com/favorites?id={data.id}">favourites</a>
 	</p>
 
-	{#if user.about}
+	{#if data.about}
 		<div class="about">
-			{@html '<p>' + user.about}
+			{@html '<p>' + data.about}
 		</div>
 	{/if}
 </div>

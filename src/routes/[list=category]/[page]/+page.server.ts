@@ -1,5 +1,7 @@
 import * as hn from '$lib/hn';
 
+export const csr = false;
+
 export async function load({ params, setHeaders, depends }) {
 	const list = params.list as hn.StoryType;
 	const page = +params.page;

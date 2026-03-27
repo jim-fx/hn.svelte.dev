@@ -1,6 +1,7 @@
 import * as db from '$lib/db';
 import { fetchItem, fetchItemInBackground } from './item';
 import type { ItemWithComments } from './types';
+import { fetchUser } from './user';
 
 function getMissingCommentIds(item:ItemWithComments){
   const existingIds = new Set<number>();
@@ -38,6 +39,10 @@ export async function fetchItemWithComments(postId: number) {
 	const item = await fetchItem(postId) as ItemWithComments;
 
   const itemWithComments = db.getItemWithComments(item.id);
+
+  if(item.by){
+    await fetchUser(item.by);
+  }
 
   setTimeout(() => {
     if(itemWithComments) fetchCommentsInbackground(itemWithComments)

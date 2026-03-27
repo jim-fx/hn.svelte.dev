@@ -21,7 +21,3 @@ ON CONFLICT(id) DO UPDATE SET
   kids        = excluded.kids,
   parts       = excluded.parts,
   cached_at   = excluded.cached_at;
-
-DELETE FROM search.items WHERE id = :id;
-INSERT INTO search.items(id, type, title, body, by)
-VALUES (:id, :type, COALESCE(:title, ''), COALESCE(:text, ''), COALESCE(:by, ''));

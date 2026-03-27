@@ -26,7 +26,8 @@ export type ItemWithComments = Item & {
 };
 
 export type User = {
-	id: string;
+	id: number;
+  name: string;
 	created: number;
 	karma: number;
 	about?: string;

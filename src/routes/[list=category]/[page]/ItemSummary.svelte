@@ -14,8 +14,8 @@
 <article>
 	<h2>
 		<a href={item.domain ? item.url : `/item/${item.id}`}>
-			{#if item.matchedTitle}
-				{@html item.matchedTitle}
+			{#if item.title_snippet}
+				{@html item.title_snippet}
 			{:else}
 				{item.title}
 			{/if}
@@ -23,9 +23,9 @@
 		</a>
 	</h2>
 
-	{#if showBodyPreview && item.matchedBody}
+	{#if showBodyPreview && item.text_snippet}
 		<p class="body-preview">
-			{@html item.matchedBody}
+			{@html item.text_snippet}
 		</p>
 	{/if}
 
@@ -34,7 +34,7 @@
 	{:else}
 		<p>
 			{item.score} points by
-			<a href="/user/{item.user}">{item.by}</a>
+			<a href="/user/{item.by}">{item.by}</a>
 			{timeAgo}
 			|
 			<a href="/item/{item.id}">

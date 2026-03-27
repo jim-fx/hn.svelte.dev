@@ -4,32 +4,30 @@ import type { Item, User } from '$lib/hn';
 type StoryResult = {
 	type: 'story';
 	results: Item[];
+	total: number;
 	durationSearchMs: number;
-	durationHighlightMs: number;
 };
 type UserResult = {
 	type: 'user';
-	results: User[];
+	results: (User & {about_snippet?:string, name_snippet?:string})[];
+	total: number;
 	durationSearchMs: number;
-	durationHighlightMs: number;
 };
 type CommentResult = {
 	type: 'comment';
 	results: Item[];
+	total: number;
 	durationSearchMs: number;
-	durationHighlightMs: number;
 };
 type SearchResult = (StoryResult | UserResult | CommentResult) & {
 	query: string;
 	searchInBody: boolean;
-	searchInAbout: boolean;
 };
 
 export async function load({ url }: { url: URL }): Promise<SearchResult> {
 	const query = url.searchParams.get('q') ?? '';
 	const searchType = url.searchParams.get('type') ?? 'story';
 	const searchInBody = url.searchParams.get('body') === '1';
-	const searchInAbout = url.searchParams.get('about') === '1';
 
 	if (!query) {
 		if (searchType === 'user') {
@@ -38,9 +36,8 @@ export async function load({ url }: { url: URL }): Promise<SearchResult> {
 				results: [],
 				query,
 				searchInBody,
-				searchInAbout,
+				total: 0,
 				durationSearchMs: 0,
-				durationHighlightMs: 0
 			};
 		}
 		if (searchType === 'comment') {
@@ -49,9 +46,8 @@ export async function load({ url }: { url: URL }): Promise<SearchResult> {
 				results: [],
 				query,
 				searchInBody,
-				searchInAbout,
+				total: 0,
 				durationSearchMs: 0,
-				durationHighlightMs: 0
 			};
 		}
 		return {
@@ -59,31 +55,28 @@ export async function load({ url }: { url: URL }): Promise<SearchResult> {
 			results: [],
 			query,
 			searchInBody,
-			searchInAbout,
+			total: 0,
 			durationSearchMs: 0,
-			durationHighlightMs: 0
 		};
 	}
 
 	if (searchType === 'user') {
-		const users = await db.searchUsers(query, searchInAbout);
+		const users = await db.searchUsers(query, searchInBody);
 		return {
 			type: 'user',
 			query,
 			searchInBody,
-			searchInAbout,
-      ...users,
+			...users
 		};
 	}
 
 	if (searchType === 'comment') {
-		const comments = await db.searchComments(query);
+		const comments = await db.searchItems(query, true, "comment");
 		return {
 			type: 'comment',
 			query,
 			searchInBody,
-			searchInAbout,
-      ...comments,
+			...comments
 		};
 	}
 
@@ -92,7 +85,6 @@ export async function load({ url }: { url: URL }): Promise<SearchResult> {
 		type: 'story',
 		query,
 		searchInBody,
-		searchInAbout,
-    ...items,
+		...items
 	};
 }

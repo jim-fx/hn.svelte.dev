@@ -15,12 +15,13 @@ export async function fetchRaw(path: string) {
 		if (isStale(cached)) {
       request(path).then(r => storeRawCache(path, r))
     }
-		return cached;
+		return cached.data;
 	}
 
   logger.debug("fetching list", {path});
 	const response = await request<RawRow>(path);
 	storeRawCache(path, response);
+  console.log({response});
 	logger.info(`fetched raw ${path}`);
 	return response;
 }
@@ -28,8 +29,8 @@ export async function fetchRaw(path: string) {
 export async function fetchListIds(list: StoryType):Promise<number[]> {
 	const path = `/${list}stories.json`;
 	const res = await fetchRaw(path);
-  logger.debug(`fetching list ids for ${list}`, res.data);
-  return res.data;
+  logger.debug(`fetching list ids for '${list}'`, res);
+  return res;
 }
 
 export async function fetchList(list: StoryType, page = 1, perPage = 30) {

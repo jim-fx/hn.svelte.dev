@@ -226,7 +226,7 @@ export async function load() {
 
 	const indexedItemsCount = (() => {
 		try {
-			return (db.prepare('SELECT COUNT(*) as count FROM search.items').get() as { count: number })
+			return (db.prepare('SELECT COUNT(*) as count FROM items_fts').get() as { count: number })
 				.count;
 		} catch {
 			return 0;
@@ -235,7 +235,7 @@ export async function load() {
 
 	const indexedUsersCount = (() => {
 		try {
-			return (db.prepare('SELECT COUNT(*) as count FROM search.users').get() as { count: number })
+			return (db.prepare('SELECT COUNT(*) as count FROM users_fts').get() as { count: number })
 				.count;
 		} catch {
 			return 0;
@@ -246,7 +246,7 @@ export async function load() {
 		try {
 			return db
 				.prepare(
-					'SELECT type, COUNT(*) as count FROM search.items GROUP BY type ORDER BY count DESC'
+					'SELECT type, COUNT(*) as count FROM items_fts GROUP BY type ORDER BY count DESC'
 				)
 				.all() as { type: string; count: number }[];
 		} catch {

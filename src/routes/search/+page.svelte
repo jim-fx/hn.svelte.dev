@@ -5,6 +5,8 @@
 	import { timeToReadable } from '$lib/utils';
 
 	const { data } = $props();
+  
+  $inspect({data});
 
 	// svelte-ignore state_referenced_locally
   let query: string = $state(data.query ?? '');
@@ -55,10 +57,10 @@
 {#if data.durationSearchMs}
   <div class="search-stats">
     <span>
-      search {data.durationSearchMs.toFixed(0) }<i>ms</i>
+      search {data.durationSearchMs?.toFixed(0) }<i>ms</i>
     </span>
     <span>
-      highlight {data.durationHighlightMs.toFixed(0) }<i>ms</i>
+      {data.results.length}/{data.total} <i>items</i>
     </span>
   </div>
 {/if}
@@ -67,17 +69,17 @@
 	{#each data.results as user, i}
 		<article>
 			<h2>
-				<a href="/user/{user.id}">
-					{#if user.matchedId}
-						{@html user.matchedId}
+				<a href="/user/{user.name}">
+					{#if user.name_snippet}
+						{@html user.name_snippet}
 					{:else}
-						{user.id}
+						{user.name}
 					{/if}
 				</a>
 			</h2>
-			{#if data.searchInAbout && user.matchedAbout}
+			{#if data.searchInBody && user.about_snippet}
 				<p class="body-preview">
-					{@html user.matchedAbout}
+					{@html user.about_snippet}
 				</p>
 			{:else if user.about}
 				<p class="body-preview">
@@ -96,10 +98,10 @@
 			<article>
 				<h2>
 					<a href="/item/{item.id}">
-						{#if item.matchedTitle}
-							{@html item.matchedTitle}
+						{#if item.text_snippet}
+							{@html item.text_snippet}
 						{:else}
-							Comment
+							{item.text}
 						{/if}
 					</a>
 				</h2>
@@ -151,6 +153,11 @@
 		align-items: center;
 		gap: 0.5em;
 		color: var(--fg-light);
+    padding: 1em;
+    background-color: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 0.5em;
+    font-size: 10px;
 	}
 	article {
 		position: relative;

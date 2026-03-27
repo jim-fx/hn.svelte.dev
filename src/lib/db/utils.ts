@@ -8,17 +8,20 @@ import {
 import { join, resolve } from 'path';
 import { createLogger } from '$lib/logger';
 import { DATA_DIR, IS_COMPRESSED, ZSTD_PATH } from './constants';
+import sqlStatements from './statements';
 
 type RunOptions<T> = {
 	deserialize?: (input: Record<string, SQLInputValue>) => T;
 };
 
+type StatementId = keyof typeof sqlStatements;
+
 export type ExtendedDatabase = DatabaseSync & {
 	path: string;
-	execSafe: (statement: string) => void;
+	execSafe: (statement: StatementId|string) => void;
 	prepareSafe: (statement: string) => StatementSync;
 	run: <T = Record<string, SQLOutputValue>>(
-		statement: string,
+		statement: StatementId|string,
 		options?: RunOptions<T>
 	) => {
 		all: {
@@ -40,6 +43,7 @@ type DatabaseOptions = {
 	queryCallback?: (queryStats: { sql: string; duration: number }) => void;
 };
 
+
 export function openDatabase(
 	dbName: 'hn.sqlite' | 'search.sqlite' | 'statistics.sqlite',
 	dbOpts?: DatabaseOptions
@@ -59,10 +63,23 @@ export function openDatabase(
 		db.path = dbPath;
 
 		const preparedStatements: Record<string, StatementSync> = {};
+    function getStatement(sqlOrId:string){
+      let sql = sqlOrId in sqlStatements
+      ? sqlStatements[sqlOrId as StatementId]
+      : sqlOrId;
 
-		db.run = <T = unknown>(sql: string, opts?: RunOptions<T>) => {
-			const statement = sql in preparedStatements ? preparedStatements[sql] : db.prepareSafe(sql);
-			preparedStatements[sql] = statement;
+      if(sql in preparedStatements){
+        return preparedStatements[sql];
+      }
+
+      const statement = db.prepareSafe(sql);
+      preparedStatements[sql] = statement;
+
+      return statement;
+    }
+
+		db.run = <T = unknown>(statementId: StatementId|string, opts?: RunOptions<T>) => {
+      const statement = getStatement(statementId);
 			return {
 				all: (...inputs: (SQLInputValue | Record<string, SQLInputValue>)[]) => {
 					let start = performance.now();
@@ -71,10 +88,10 @@ export function openDatabase(
 							.all(...(inputs as SQLInputValue[]))
 							.map((r) => opts?.deserialize?.(r) ?? r) as T[];
 					} catch (e) {
-						logger.error('failed to run statement.all', { e, statement, inputs });
+						logger.error('failed to run statement.all', { e, sql: statement.expandedSQL, inputs });
 						throw e;
 					} finally {
-            logger.debug("run statement", {sql: statement.expandedSQL, inputs})
+            logger.debug("run statement", {statementId, sql: statement.expandedSQL, inputs})
 						const duration = performance.now() - start;
 						dbOpts?.queryCallback?.({ sql: statement.sourceSQL, duration });
 					}
