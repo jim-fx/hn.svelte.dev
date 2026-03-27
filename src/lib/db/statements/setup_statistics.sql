@@ -1,0 +1,11 @@
+CREATE TABLE IF NOT EXISTS requests (
+  url TEXT NOT NULL,
+  duration INTEGER NOT NULL,
+  status INTEGER NOT NULL,
+  responseSize INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS queries (
+  sql TEXT NOT NULL,
+  duration INTEGER NOT NULL
+);

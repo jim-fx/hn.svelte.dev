@@ -35,3 +35,12 @@ export type User = {
 	matchedId?: string;
 	matchedAbout?: string;
 };
+
+export interface WorkerRequest {
+  type: 'sum';
+  payload: { a: number; b: number };
+}
+
+export interface WorkerResponse {
+  result: number;
+}

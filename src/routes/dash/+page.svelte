@@ -31,8 +31,15 @@
 		stats?.scoreDistribution.map((d) => ({ x: d.bucket, y: d.count })) ?? []
 	);
 
-	const lineData = $derived(stats?.itemsByHour.map((d) => ({ x: d.hour, y: d.count })) ?? []);
+	$inspect({ barData });
 
+	const barYScale = $derived(() =>
+		scaleBand()
+			.domain(['0', '1', '2-9', '10-49', '50-99', '100-499', '500-999', '1000+'])
+			.paddingInner(0.05)
+	);
+
+	const lineData = $derived(stats?.itemsByHour.map((d) => ({ x: d.hour, y: d.count })) ?? []);
 </script>
 
 <svelte:head>
@@ -43,6 +50,7 @@
 
 {#if stats}
 	<section class="db-section">
+		<h2>Main Database (hn.sqlite)</h2>
 		<div class="stats-grid">
 			<div class="stat-card">
 				<div class="stat-value">{formatNumber(stats.totalItems)}</div>
@@ -70,7 +78,6 @@
 			</div>
 		</div>
 	</section>
-
 
 	<div class="charts-grid">
 		<section class="chart-section">
@@ -102,20 +109,20 @@
 		</section>
 
 		<section class="chart-section">
-			<h2>Score Distribution</h2>
+			<h2>Score Distribution (Stories)</h2>
 			<div class="chart-container">
 				<LayerCake
 					data={barData}
 					x="y"
 					y="x"
-					yScale={scaleBand().paddingInner(0.05)}
+					yScale={barYScale()}
 					padding={{ bottom: 30, left: 70 }}
 				>
 					<Svg>
 						<Box />
 						<Bar />
 						<AxisX ticks={5} />
-						<AxisY ticks={6} />
+						<AxisY ticks={8} />
 					</Svg>
 				</LayerCake>
 			</div>
@@ -139,8 +146,6 @@
 			</div>
 		</section>
 
-    <br/>
-
 		<section class="chart-section">
 			<h2>Top Users</h2>
 			<div class="user-list">
@@ -156,7 +161,7 @@
 			</div>
 		</section>
 
-		<section class="chart-section">
+		<section class="chart-section full-width">
 			<h2>Top Stories</h2>
 			<div class="item-list">
 				{#each stats.topStories as story, i (story.id)}
@@ -169,50 +174,35 @@
 			</div>
 		</section>
 
-		<section class="chart-section full-width">
-			<h2>Top Comments</h2>
-			<div class="item-list">
-				{#each stats.topComments as comment, i (comment.id)}
-					<div class="item-row">
-						<span class="rank">{i + 1}</span>
-						<a href="/item/{comment.parent}#comment-{comment.id}" class="comment-text">
-							{comment.text.slice(0, 120)}{comment.text.length > 120 ? '...' : ''}
-						</a>
-						<span class="score">{formatNumber(comment.score)} pts</span>
-					</div>
-				{/each}
+		<section class="db-section">
+			<h2>Search Database (search.sqlite)</h2>
+			<div class="stats-grid" style="margin-bottom: 0px">
+				<div class="stat-card">
+					<div class="stat-value">{stats.searchDbSize}</div>
+					<div class="stat-label">Search DB Size</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-value">{formatNumber(stats.indexedItemsCount)}</div>
+					<div class="stat-label">Indexed Items</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-value">{formatNumber(stats.indexedUsersCount)}</div>
+					<div class="stat-label">Indexed Users</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-value">{stats.searchDbMeta.pageCount}</div>
+					<div class="stat-label">Total Pages</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-value">{stats.syncStatus.totalIndexed}</div>
+					<div class="stat-label">Total Indexed</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-value">{stats.fts5Info.itemsTokenizer}</div>
+					<div class="stat-label">Items Tokenizer</div>
+				</div>
 			</div>
 		</section>
-
-    <section class="db-section">
-      <h2>Search Database (search.sqlite)</h2>
-      <div class="stats-grid" style="margin-bottom: 0px">
-        <div class="stat-card">
-          <div class="stat-value">{stats.searchDbSize}</div>
-          <div class="stat-label">Search DB Size</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value">{formatNumber(stats.indexedItemsCount)}</div>
-          <div class="stat-label">Indexed Items</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value">{formatNumber(stats.indexedUsersCount)}</div>
-          <div class="stat-label">Indexed Users</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value">{stats.searchDbMeta.pageCount}</div>
-          <div class="stat-label">Total Pages</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value">{stats.syncStatus.totalIndexed}</div>
-          <div class="stat-label">Total Indexed</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value">{stats.fts5Info.itemsTokenizer}</div>
-          <div class="stat-label">Items Tokenizer</div>
-        </div>
-      </div>
-    </section>
 
 		<section class="chart-section full-width">
 			<h2>Most Common Tokens (Top 20)</h2>
@@ -230,6 +220,114 @@
 				<p class="empty-message">No tokens data available</p>
 			{/if}
 		</section>
+
+		<section class="db-section">
+			<h2>Statistics Database (statistics.sqlite)</h2>
+			<div class="stats-grid" style="margin-bottom: 0px">
+				<div class="stat-card">
+					<div class="stat-value">{stats.statisticsDbSize}</div>
+					<div class="stat-label">Statistics DB Size</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-value">{formatNumber(stats.requestStats.totalRequests)}</div>
+					<div class="stat-label">Total Requests</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-value">{stats.requestStats.minDuration}ms</div>
+					<div class="stat-label">Min Duration</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-value">{stats.requestStats.avgDuration.toFixed(0)}ms</div>
+					<div class="stat-label">Avg Duration</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-value">{stats.requestStats.p95Duration}ms</div>
+					<div class="stat-label">P95 Duration</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-value">{stats.requestStats.maxDuration}ms</div>
+					<div class="stat-label">Max Duration</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-value">{formatNumber(stats.queryStats.totalQueries)}</div>
+					<div class="stat-label">Total Queries</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-value">{stats.queryStats.avgDuration.toFixed(1)}ms</div>
+					<div class="stat-label">Avg Query Duration</div>
+				</div>
+			</div>
+		</section>
+
+		<section class="chart-section">
+			<h2>Requests by Status</h2>
+			{#if stats.requestStats.requestsByStatus.length > 0}
+				<div class="status-list">
+					{#each stats.requestStats.requestsByStatus as item}
+						<div class="status-row">
+							<span
+								class="status-code"
+								class:success={item.status >= 200 && item.status < 300}
+								class:redirect={item.status >= 300 && item.status < 400}
+								class:error={item.status >= 400}>{item.status}</span
+							>
+							<span class="count">{formatNumber(item.count)}</span>
+						</div>
+					{/each}
+				</div>
+			{:else}
+				<p class="empty-message">No request data available</p>
+			{/if}
+		</section>
+
+		<section class="chart-section">
+			<h2>Top Requested URLs</h2>
+			{#if stats.requestStats.requestsByUrl.length > 0}
+				<div class="url-list">
+					{#each stats.requestStats.requestsByUrl as item}
+						<div class="url-row">
+							<span class="url">{item.url.replace(/^https?:\/\/[^/]+/, '')}</span>
+							<span class="count">{formatNumber(item.count)}</span>
+							<span class="duration">{item.avgDuration.toFixed(0)}ms avg</span>
+						</div>
+					{/each}
+				</div>
+			{:else}
+				<p class="empty-message">No request data available</p>
+			{/if}
+		</section>
+
+		<section class="chart-section full-width">
+			<h2>Top Queries</h2>
+			{#if stats.queryStats.topQueries.length > 0}
+				<div class="query-list">
+					{#each stats.queryStats.topQueries as query}
+						<div class="query-row">
+							<span class="count">{formatNumber(query.count)}</span>
+							<span class="sql">{query.sql}</span>
+						</div>
+					{/each}
+				</div>
+			{:else}
+				<p class="empty-message">No query data available</p>
+			{/if}
+		</section>
+
+		<section class="chart-section full-width">
+			<h2>Slowest Queries</h2>
+			{#if stats.queryStats.slowQueries.length > 0}
+				<div class="query-list">
+					{#each stats.queryStats.slowQueries as query}
+						<div class="query-row">
+							<span class="duration">{Math.floor(query.duration * 10) / 10}ms</span>
+							<span class="sql">{query.sql}</span>
+						</div>
+					{/each}
+				</div>
+			{:else}
+				<p class="empty-message">No query data available</p>
+			{/if}
+		</section>
 	</div>
 {/if}
 
@@ -243,9 +341,9 @@
 		font-size: 1.25rem;
 	}
 
-  .db-section {
-    grid-column: 1 / -1
-  }
+	.db-section {
+		grid-column: 1 / -1;
+	}
 
 	.db-section h2 {
 		margin-top: 1.5rem;
@@ -486,6 +584,69 @@
 		font-style: italic;
 		padding: 1rem;
 		text-align: center;
+	}
+
+	.status-list,
+	.url-list,
+	.query-list {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	.status-row,
+	.url-row,
+	.query-row {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0.5rem;
+		border-radius: 4px;
+		background: rgba(0, 0, 0, 0.03);
+	}
+
+	:global(html.dark) .status-row,
+	:global(html.dark) .url-row,
+	:global(html.dark) .query-row {
+		background: rgba(255, 255, 255, 0.03);
+	}
+
+	.status-code {
+		font-family: monospace;
+		font-weight: 600;
+		padding: 0.25rem 0.5rem;
+		border-radius: 4px;
+		background: var(--fg-light);
+		color: var(--bg);
+		font-size: 0.75rem;
+	}
+
+	.status-code.success {
+		background: #22c55e;
+		color: white;
+	}
+	.status-code.redirect {
+		background: #eab308;
+		color: white;
+	}
+	.status-code.error {
+		background: #ef4444;
+		color: white;
+	}
+
+	.url,
+	.sql {
+		flex: 1;
+		font-family: monospace;
+		font-size: 0.75rem;
+		word-break: break-all;
+	}
+
+	.duration {
+		font-family: monospace;
+		font-size: 0.75rem;
+		color: var(--fg-light);
+		white-space: nowrap;
 	}
 
 	@media (max-width: 500px) {

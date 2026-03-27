@@ -39,6 +39,22 @@ interface Stats {
 		usersTokenizer: string;
 	};
 	commonTokens: { term: string; count: number }[];
+	requestStats: {
+		totalRequests: number;
+		avgDuration: number;
+		minDuration: number;
+		maxDuration: number;
+		p95Duration: number;
+		requestsByStatus: { status: number; count: number }[];
+		requestsByUrl: { url: string; count: number; avgDuration: number }[];
+	};
+	queryStats: {
+		totalQueries: number;
+		avgDuration: number;
+		slowQueries: { sql: string; duration: number }[];
+		topQueries: { sql: string; count: number }[];
+	};
+	statisticsDbSize: string;
 }
 
 function formatBytes(bytes: number): string {
@@ -49,7 +65,6 @@ function formatBytes(bytes: number): string {
 }
 
 export async function load() {
-
 	const totalItems = (db.prepare('SELECT COUNT(*) as count FROM items').get() as { count: number })
 		.count;
 
@@ -94,7 +109,8 @@ export async function load() {
 		FROM items
 		GROUP BY hour
 		ORDER BY hour
-	`)
+	`
+		)
 		.all() as { hour: number; count: number }[];
 
 	const scoreDistribution = db
@@ -102,7 +118,9 @@ export async function load() {
 			`
 		SELECT 
 			CASE 
-				WHEN score < 10 THEN '0-9'
+				WHEN score = 0 THEN '0'
+				WHEN score = 1 THEN '1'
+				WHEN score < 10 THEN '2-9'
 				WHEN score < 50 THEN '10-49'
 				WHEN score < 100 THEN '50-99'
 				WHEN score < 500 THEN '100-499'
@@ -111,20 +129,30 @@ export async function load() {
 			END as bucket,
 			COUNT(*) as count
 		FROM items
-		WHERE score IS NOT NULL
+		WHERE score IS NOT NULL AND type = 'story'
 		GROUP BY bucket
 		ORDER BY 
 			CASE bucket
-				WHEN '0-9' THEN 1
-				WHEN '10-49' THEN 2
-				WHEN '50-99' THEN 3
-				WHEN '100-499' THEN 4
-				WHEN '500-999' THEN 5
-				WHEN '1000+' THEN 6
+				WHEN '0' THEN 1
+				WHEN '1' THEN 2
+				WHEN '2-9' THEN 3
+				WHEN '10-49' THEN 4
+				WHEN '50-99' THEN 5
+				WHEN '100-499' THEN 6
+				WHEN '500-999' THEN 7
+				WHEN '1000+' THEN 8
 			END
 	`
 		)
 		.all() as { bucket: string; count: number }[];
+
+	const buckets = ['0', '1', '2-9', '10-49', '50-99', '100-499', '500-999', '1000+'];
+	const scoreDistributionWithZero = buckets.map((b) => {
+		const existing = scoreDistribution.find((d) => d.bucket === b);
+		return existing || { bucket: b, count: 0 };
+	});
+
+	console.log({ scoreDistribution });
 
 	const topUsers = db
 		.prepare(
@@ -219,7 +247,9 @@ export async function load() {
 	const itemsByTypeSearch = (() => {
 		try {
 			return db
-				.prepare('SELECT type, COUNT(*) as count FROM search.items GROUP BY type ORDER BY count DESC')
+				.prepare(
+					'SELECT type, COUNT(*) as count FROM search.items GROUP BY type ORDER BY count DESC'
+				)
 				.all() as { type: string; count: number }[];
 		} catch {
 			return [];
@@ -233,37 +263,145 @@ export async function load() {
 		usersPercent: totalIndexed > 0 ? (indexedUsersCount / totalIndexed) * 100 : 0
 	};
 
-  const fts5Info = (() => {
-    try {
-      const tables = db
-        .prepare(`SELECT name, sql FROM search.sqlite_master WHERE type='table' AND sql LIKE 'CREATE VIRTUAL TABLE%'`)
-        .all() as { name: string; sql: string }[];
+	const fts5Info = (() => {
+		try {
+			const tables = db
+				.prepare(
+					`SELECT name, sql FROM search.sqlite_master WHERE type='table' AND sql LIKE 'CREATE VIRTUAL TABLE%'`
+				)
+				.all() as { name: string; sql: string }[];
 
-      const extractTokenizer = (sql: string): string => {
-        const match = sql.match(/tokenize\s*=\s*'([^']+)'/i);
-        return match ? match[1] : 'default';
-      };
+			const extractTokenizer = (sql: string): string => {
+				const match = sql.match(/tokenize\s*=\s*'([^']+)'/i);
+				return match ? match[1] : 'default';
+			};
 
-      const itemsTable = tables.find((t) => t.name === 'items');
-      const usersTable = tables.find((t) => t.name === 'users');
+			const itemsTable = tables.find((t) => t.name === 'items');
+			const usersTable = tables.find((t) => t.name === 'users');
 
-      const itemsTokenizer = itemsTable ? extractTokenizer(itemsTable.sql) : 'N/A';
-      const usersTokenizer = usersTable ? extractTokenizer(usersTable.sql) : 'N/A';
+			const itemsTokenizer = itemsTable ? extractTokenizer(itemsTable.sql) : 'N/A';
+			const usersTokenizer = usersTable ? extractTokenizer(usersTable.sql) : 'N/A';
 
-      return { itemsTokenizer, usersTokenizer };
-    } catch (e) {
-      console.error('Error fetching FTS5 info:', e);
-      return { itemsTokenizer: 'N/A', usersTokenizer: 'N/A' };
-    }
-  })();
+			return { itemsTokenizer, usersTokenizer };
+		} catch (e) {
+			console.error('Error fetching FTS5 info:', e);
+			return { itemsTokenizer: 'N/A', usersTokenizer: 'N/A' };
+		}
+	})();
 
-  const commonTokens = db.prepare(`
+	const commonTokens = db
+		.prepare(
+			`
     SELECT term, cnt AS count
     FROM search.items_tokens
     ORDER BY cnt DESC
     LIMIT 20;
-  `)
-  .all() as { term: string; count: number }[];
+  `
+		)
+		.all() as { term: string; count: number }[];
+
+	const requestStats = (() => {
+		try {
+			const totalRequests = (
+				db.prepare('SELECT COUNT(*) as count FROM statistics.requests').get() as { count: number }
+			).count;
+			const durationStats = db
+				.prepare(
+					`
+				SELECT MIN(duration) as min, MAX(duration) as max, AVG(duration) as avg, 
+				       (SELECT duration FROM statistics.requests ORDER BY duration DESC LIMIT 1 OFFSET 5) as p95
+				FROM statistics.requests
+			`
+				)
+				.get() as { min: number; max: number; avg: number; p95: number };
+			const avgDuration = durationStats.avg ?? 0;
+			const requestsByStatus = db
+				.prepare(
+					`
+				SELECT status, COUNT(*) as count
+				FROM statistics.requests
+				GROUP BY status
+				ORDER BY count DESC
+			`
+				)
+				.all() as { status: number; count: number }[];
+			const requestsByUrl = db
+				.prepare(
+					`
+				SELECT url, COUNT(*) as count, AVG(duration) as avgDuration
+				FROM statistics.requests
+				GROUP BY url
+				ORDER BY count DESC
+				LIMIT 10
+			`
+				)
+				.all() as { url: string; count: number; avgDuration: number }[];
+			return {
+				totalRequests,
+				avgDuration,
+				minDuration: durationStats.min,
+				maxDuration: durationStats.max,
+				p95Duration: durationStats.p95,
+				requestsByStatus,
+				requestsByUrl
+			};
+		} catch {
+			return {
+				totalRequests: 0,
+				avgDuration: 0,
+				minDuration: 0,
+				maxDuration: 0,
+				p95Duration: 0,
+				requestsByStatus: [],
+				requestsByUrl: []
+			};
+		}
+	})();
+
+	const queryStats = (() => {
+		try {
+			const totalQueries = (
+				db.prepare('SELECT COUNT(*) as count FROM statistics.queries').get() as { count: number }
+			).count;
+			const avgDuration =
+				(
+					db.prepare('SELECT AVG(duration) as avg FROM statistics.queries').get() as {
+						avg: number | null;
+					}
+				).avg ?? 0;
+			const slowQueries = db
+				.prepare(
+					`
+				SELECT sql, duration
+				FROM statistics.queries
+				ORDER BY duration DESC
+				LIMIT 10
+			`
+				)
+				.all() as { sql: string; duration: number }[];
+			const topQueries = db
+				.prepare(
+					`
+				SELECT sql, COUNT(*) as count
+				FROM statistics.queries
+				GROUP BY sql
+				ORDER BY count DESC
+				LIMIT 10
+			`
+				)
+				.all() as { sql: string; count: number }[];
+			return { totalQueries, avgDuration, slowQueries, topQueries };
+		} catch (e) {
+			console.log('FAiled to statistics', { e });
+			return { totalQueries: 0, avgDuration: 0, slowQueries: [], topQueries: [] };
+		}
+	})();
+
+	let statisticsDbSize = 'N/A';
+	try {
+		const statStats = statSync(join(DB_DIR, 'statistics.sqlite'));
+		statisticsDbSize = formatBytes(statStats.size);
+	} catch {}
 
 	return {
 		stats: {
@@ -271,7 +409,7 @@ export async function load() {
 			totalUsers,
 			itemsByType,
 			itemsByHour,
-			scoreDistribution,
+			scoreDistribution: scoreDistributionWithZero,
 			topUsers,
 			topStories,
 			topComments,
@@ -285,7 +423,10 @@ export async function load() {
 			itemsByTypeSearch,
 			syncStatus,
 			fts5Info,
-			commonTokens
+			commonTokens,
+			requestStats,
+			queryStats,
+			statisticsDbSize
 		}
 	} as { stats: Stats };
 }

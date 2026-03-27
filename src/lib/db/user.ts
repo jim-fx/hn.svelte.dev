@@ -30,6 +30,5 @@ export function getUser(id: string) {
 }
 
 export function storeUser(user: User) {
-	if (!user) return;
 	return db.run(sqlStatements.upsert_user).run(serialiseUser(user));
 }

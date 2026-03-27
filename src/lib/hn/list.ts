@@ -3,8 +3,8 @@ import { fetchItemsWithComments } from './comments';
 import { HN_BASE_URL, LIST_STALE_MS } from './constants';
 import { fetchItems } from './item';
 import type { StoryType } from './types';
-import { withRetry } from './utils';
 import { createLogger } from '$lib/logger';
+import { request } from './request';
 
 const logger = createLogger('hn:list');
 
@@ -14,24 +14,19 @@ export async function fetchRaw(path: string) {
 		const isStale = Date.now() - cached.cached_at.getTime() > LIST_STALE_MS;
 		if (isStale) {
 			const url = `${HN_BASE_URL}${path}`;
-			withRetry(() => fetch(url), { retries: 3, delay: 500 })
-				.then((r) => r.json())
-				.then((data) => storeRawCache(path, data))
-				.catch((err) => logger.warn(`background refresh raw ${path} failed`, { error: err }));
+      const data = await request(url);
+			storeRawCache(path, data)
+      return data;
 		}
 		logger.debug(`cache hit raw ${path}`);
 		return cached.data as ReturnType<typeof response.json>;
 	}
 
 	const url = `${HN_BASE_URL}${path}`;
-	const response = await withRetry(() => fetch(url), { retries: 3, delay: 500 });
-	if (!response.ok) {
-		throw new Error(`HN API error ${response.status} ${response.statusText} — ${url}`);
-	}
-	const data = await response.json();
-	storeRawCache(path, data);
+	const response = await request(url);
+	storeRawCache(path, response);
 	logger.info(`fetched raw ${path}`);
-	return data;
+	return response;
 }
 
 export async function fetchListIds(list: StoryType) {

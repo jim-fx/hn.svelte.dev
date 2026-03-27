@@ -1,24 +1,24 @@
 import * as db from '$lib/db';
 import type { Item } from './types';
-import { runConcurrently, withRetry } from './utils';
+import { runConcurrently } from './utils';
 import { HN_BASE_URL, ITEM_STALE_MS } from './constants';
 import { createLogger } from '$lib/logger';
 import { fetchUser } from './user';
+import { request } from './request';
 
 const logger = createLogger('hn:item');
 
 async function fetchItemInBackground(id: number) {
 	const url = `${HN_BASE_URL}/item/${id}.json`;
 	try {
-		const response = await fetch(url);
-		if (!response.ok) return;
-		const fresh = await response.json();
+		const fresh = await request(url);
 		db.storeItem(fresh);
 		logger.debug(`background refresh item ${id}`);
 	} catch (err) {
 		logger.warn(`background refresh item ${id} failed`, { error: err });
 	}
 }
+
 
 export async function fetchItem(id: number): Promise<Item> {
 	const url = `${HN_BASE_URL}/item/${id}.json`;
@@ -29,13 +29,9 @@ export async function fetchItem(id: number): Promise<Item> {
 		return cached;
 	}
 
-	const response = await withRetry(() => fetch(url), { retries: 3, delay: 500 });
-	if (!response.ok) {
-		throw new Error(`HN API error ${response.status} ${response.statusText} — ${url}`);
-	}
-
-	const item = await response.json();
+  const item = await request(url);
 	db.storeItem(item);
+
 	logger.info(`fetched item ${id}`);
 
 	if (item.by) {
