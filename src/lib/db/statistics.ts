@@ -29,15 +29,25 @@ function formatBytes(bytes: number): string {
 	return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
+async function getSize(){
+  try {
+    const url = new URL(db.path);
+    console.log(db.path);
+    const stats = await stat(url.pathname);
+    console.log(url.pathname)
+    return formatBytes(stats.size);
+  } catch{
+    return null
+  }
+}
+
 export async function getStatistics() {
 	const { data } = db
     .run("get_statistics")
     .get();
-  const url = new URL(db.path);
-  const stats = await stat(url.pathname);
   return {
     is_compressed: IS_COMPRESSED,
-    size: formatBytes(stats.size),
+    size: await getSize(),
     db: JSON.parse(data as string)
   }
 }
