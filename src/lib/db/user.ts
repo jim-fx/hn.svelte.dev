@@ -4,7 +4,8 @@ import { db } from './db';
 
 function serialiseUser(user: User): Record<string, SQLInputValue> {
 	return {
-    ...user,
+    name: user.id ?? user.name,
+    created: user.created,
 		karma: user.karma ?? null,
 		about: user.about ?? null,
 		submitted: user.submitted ? JSON.stringify(user.submitted) : null,
@@ -14,7 +15,8 @@ function serialiseUser(user: User): Record<string, SQLInputValue> {
 
 function deserialiseUser(row: Record<string, SQLOutputValue | undefined>): User {
 	return {
-    ...row,
+    id: row.id as number,
+    name: row.name as string,
 		created: (row.created as number) ?? 0,
 		karma: (row.karma as number) ?? 0,
 		about: row.about as string | undefined,

@@ -40,9 +40,15 @@ export async function fetchItemWithComments(postId: number) {
 
   const itemWithComments = db.getItemWithComments(item.id);
 
-  if(item.by){
-    await fetchUser(item.by);
+  if(itemWithComments && item.kids?.length && !itemWithComments?.comments?.length){
+    const comments = item.kids.slice(0, 10);
+    itemWithComments.comments = await Promise.all(comments.map(c => fetchItem(c) as Promise<ItemWithComments>))
   }
+
+  if(item.by){
+    fetchUser(item.by);
+  }
+
 
   setTimeout(() => {
     if(itemWithComments) fetchCommentsInbackground(itemWithComments)

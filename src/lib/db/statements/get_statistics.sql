@@ -1,87 +1,218 @@
--- Total counts
-SELECT 'total_items' as key, COUNT(*) as value FROM items
-UNION ALL
-SELECT 'total_users' as key, COUNT(*) as value FROM users;
+SELECT json_object(
+  -- Total counts
+  'total_items', (SELECT COUNT(*) FROM items),
+  'total_users', (SELECT COUNT(*) FROM users),
 
--- Items by type
-SELECT type, COUNT(*) as count FROM items GROUP BY type ORDER BY count DESC;
+  -- Metadata
+  'page_count', (SELECT page_count FROM pragma_page_count()),
+  'page_size', (SELECT page_size FROM pragma_page_size()),
+  'freelist_count', (SELECT freelist_count FROM pragma_freelist_count()),
+  'user_version', (SELECT user_version FROM pragma_user_version()),
 
--- Items by hour
-SELECT 
-	CAST(strftime('%H', datetime(cached_at / 1000, 'unixepoch', 'localtime')) AS INTEGER) as hour,
-	COUNT(*) as count
-FROM items
-GROUP BY hour
-ORDER BY hour;
+  -- Items by type
+  'items_by_type', (
+    SELECT json_group_array(
+      json_object('type', type, 'count', cnt)
+    )
+    FROM (
+      SELECT type, COUNT(*) AS cnt
+      FROM items
+      GROUP BY type
+      ORDER BY cnt DESC
+    )
+  ),
 
--- Score distribution
-SELECT 
-	CASE 
-		WHEN score = 0 THEN '0'
-		WHEN score = 1 THEN '1'
-		WHEN score < 10 THEN '2-9'
-		WHEN score < 50 THEN '10-49'
-		WHEN score < 100 THEN '50-99'
-		WHEN score < 500 THEN '100-499'
-		WHEN score < 1000 THEN '500-999'
-		ELSE '1000+'
-	END as bucket,
-	COUNT(*) as count
-FROM items
-WHERE score IS NOT NULL AND type = 'story'
-GROUP BY bucket
-ORDER BY 
-	CASE bucket
-		WHEN '0' THEN 1
-		WHEN '1' THEN 2
-		WHEN '2-9' THEN 3
-		WHEN '10-49' THEN 4
-		WHEN '50-99' THEN 5
-		WHEN '100-499' THEN 6
-		WHEN '500-999' THEN 7
-		WHEN '1000+' THEN 8
-	END;
+  -- Items by hour
+  'items_by_hour', (
+    SELECT json_group_array(
+      json_object('hour', hour, 'count', cnt)
+    )
+    FROM (
+      SELECT 
+        CAST(strftime('%H', datetime(cached_at / 1000, 'unixepoch', 'localtime')) AS INTEGER) AS hour,
+        COUNT(*) AS cnt
+      FROM items
+      GROUP BY hour
+      ORDER BY hour
+    )
+  ),
 
--- Top users
-SELECT id, karma FROM users ORDER BY karma DESC LIMIT 10;
+  -- Score distribution
+  'score_distribution', (
+    SELECT json_group_array(
+      json_object('bucket', bucket, 'count', cnt)
+    )
+    FROM (
+      SELECT 
+        CASE 
+          WHEN score = 0 THEN '0'
+          WHEN score = 1 THEN '1'
+          WHEN score < 10 THEN '2-9'
+          WHEN score < 50 THEN '10-49'
+          WHEN score < 100 THEN '50-99'
+          WHEN score < 500 THEN '100-499'
+          WHEN score < 1000 THEN '500-999'
+          ELSE '1000+'
+        END AS bucket,
+        COUNT(*) AS cnt
+      FROM items
+      WHERE score IS NOT NULL AND type = 'story'
+      GROUP BY bucket
+    )
+  ),
 
--- Top stories
-SELECT id, title, score, by FROM items WHERE type = 'story' AND score IS NOT NULL AND deleted != 1 AND dead != 1 ORDER BY score DESC LIMIT 10;
+  -- Top users
+  'top_users', (
+    SELECT json_group_array(
+      json_object('name', name, 'karma', karma)
+    )
+    FROM (
+      SELECT name, karma
+      FROM users
+      ORDER BY karma DESC
+      LIMIT 10
+    )
+  ),
 
--- Top comments
-SELECT id, parent, text, by, score FROM items WHERE type = 'comment' AND text IS NOT NULL AND deleted != 1 AND dead != 1 ORDER BY score DESC NULLS LAST LIMIT 10;
+  -- Top stories
+  'top_stories', (
+    SELECT json_group_array(
+      json_object('id', id, 'title', title, 'score', score, 'by', by)
+    )
+    FROM (
+      SELECT id, title, score, by
+      FROM items
+      WHERE type='story' AND score IS NOT NULL AND deleted != 1 AND dead != 1
+      ORDER BY score DESC
+      LIMIT 10
+    )
+  ),
 
--- Raw cache stats
-SELECT COUNT(*) as count, MIN(cached_at) as oldest, MAX(cached_at) as newest FROM raw_cache;
+  -- Top comments
+  'top_comments', (
+    SELECT json_group_array(
+      json_object('id', id, 'parent', parent, 'text', text, 'by', by, 'score', score)
+    )
+    FROM (
+      SELECT id, parent, text, by, score
+      FROM items
+      WHERE type='comment' AND text IS NOT NULL AND deleted != 1 AND dead != 1
+      ORDER BY score DESC
+      LIMIT 10
+    )
+  ),
 
--- Search database stats (using try-catch in code)
-SELECT COUNT(*) as count FROM items_fts;
-SELECT COUNT(*) as count FROM users_fts;
-SELECT type, COUNT(*) as count FROM search.items GROUP BY type ORDER BY count DESC;
+  -- Raw cache stats
+  'raw_cache_stats', (
+    SELECT json_object(
+      'count', COUNT(*),
+      'oldest', MIN(cached_at),
+      'newest', MAX(cached_at)
+    )
+    FROM raw_cache
+  ),
 
--- FTS5 info
-SELECT name, sql FROM search.sqlite_master WHERE type='table' AND sql LIKE 'CREATE VIRTUAL TABLE%';
+  -- FTS stats
+  'fts', json_object(
+    'items_count', (SELECT COUNT(*) FROM items_fts),
+    'users_count', (SELECT COUNT(*) FROM users_fts)
+  ),
 
--- Common tokens
-SELECT term, cnt as count FROM search.items_tokens ORDER BY cnt DESC LIMIT 20;
+  -- Items FTS breakdown
+  'items_fts_by_type', (
+    SELECT json_group_array(
+      json_object('type', type, 'count', cnt)
+    )
+    FROM (
+      SELECT type, COUNT(*) AS cnt
+      FROM items_fts
+      GROUP BY type
+      ORDER BY cnt DESC
+    )
+  ),
 
--- Request stats combined
-SELECT 
-	(SELECT COUNT(*) FROM statistics.requests) as total_requests,
-	(SELECT AVG(duration) FROM statistics.requests) as avg_duration,
-	(SELECT MIN(duration) FROM statistics.requests) as min_duration,
-	(SELECT MAX(duration) FROM statistics.requests) as max_duration,
-	(SELECT duration FROM statistics.requests ORDER BY duration DESC LIMIT 1 OFFSET 5) as p95_duration;
+  -- Common tokens
+  'common_tokens', (
+    SELECT json_group_array(
+      json_object('term', term, 'count', cnt)
+    )
+    FROM (
+      SELECT term, cnt
+      FROM items_tokens
+      ORDER BY cnt DESC
+      LIMIT 20
+    )
+  ),
 
-SELECT status, COUNT(*) as count FROM statistics.requests GROUP BY status ORDER BY count DESC;
+  -- Request stats
+  'request_stats', (
+    SELECT json_object(
+      'total_requests', (SELECT COUNT(*) FROM statistics.requests),
+      'avg_duration', (SELECT AVG(duration) FROM statistics.requests),
+      'min_duration', (SELECT MIN(duration) FROM statistics.requests),
+      'max_duration', (SELECT MAX(duration) FROM statistics.requests),
+      'p95_duration', (
+        SELECT duration
+        FROM statistics.requests
+        ORDER BY duration DESC
+        LIMIT 1 OFFSET 5
+      )
+    )
+  ),
 
-SELECT url, COUNT(*) as count, AVG(duration) as avg_duration FROM statistics.requests GROUP BY url ORDER BY count DESC LIMIT 10;
+  'request_status', (
+    SELECT json_group_array(
+      json_object('status', status, 'count', cnt)
+    )
+    FROM (
+      SELECT status, COUNT(*) AS cnt
+      FROM statistics.requests
+      GROUP BY status
+      ORDER BY cnt DESC
+    )
+  ),
 
--- Query stats combined
-SELECT 
-	(SELECT COUNT(*) FROM statistics.queries) as total_queries,
-	(SELECT AVG(duration) FROM statistics.queries) as avg_duration;
+  'request_urls', (
+    SELECT json_group_array(
+      json_object('url', url, 'count', cnt, 'avg_duration', avg_dur)
+    )
+    FROM (
+      SELECT url, COUNT(*) AS cnt, AVG(duration) AS avg_dur
+      FROM statistics.requests
+      GROUP BY url
+      ORDER BY cnt DESC
+      LIMIT 10
+    )
+  ),
 
-SELECT sql, duration FROM statistics.queries ORDER BY duration DESC LIMIT 10;
+  -- Query stats
+  'query_stats', json_object(
+    'total_queries', (SELECT COUNT(*) FROM statistics.queries),
+    'avg_duration', (SELECT AVG(duration) FROM statistics.queries)
+  ),
 
-SELECT sql, COUNT(*) as count, AVG(duration) as duration FROM statistics.queries GROUP BY sql ORDER BY count DESC LIMIT 10;
+  'slowest_queries', (
+    SELECT json_group_array(
+      json_object('sql', sql, 'duration', duration)
+    )
+    FROM (
+      SELECT sql, duration
+      FROM statistics.queries
+      ORDER BY duration DESC
+      LIMIT 10
+    )
+  ),
+
+  'query_grouped', (
+    SELECT json_group_array(
+      json_object('sql', sql, 'count', cnt, 'avg_duration', avg_dur)
+    )
+    FROM (
+      SELECT sql, COUNT(*) AS cnt, AVG(duration) AS avg_dur
+      FROM statistics.queries
+      GROUP BY sql
+      ORDER BY cnt DESC
+      LIMIT 10
+    )
+  )
+) as data;

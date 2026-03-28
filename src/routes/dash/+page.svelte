@@ -9,7 +9,8 @@
 	import Box from '$lib/charts/Box.svelte';
 
 	const { data } = $props();
-	const stats = $derived(data?.stats);
+  console.log(data);
+	const stats = $derived(data?.db);
 
 	function formatNumber(n: number) {
 		return n?.toLocaleString() ?? '';
@@ -23,21 +24,19 @@
 		return `${Math.floor(hours / 24)}d ago`;
 	}
 
-	const pieData = $derived(
-		stats?.itemsByType.map((d) => ({ label: d.type, value: d.count })) ?? []
-	);
+	const pieData = stats?.items_by_type?.map((d) => ({ label: d.type, value: d.count })) ?? []
 
-	const barData = $derived(
-		stats?.scoreDistribution.map((d) => ({ x: d.bucket, y: d.count })) ?? []
-	);
+	const barData = stats?.score_distribution
+    .map((d) => ({ x: d.bucket, y: d.count }))
+    .sort((a,b) => parseInt(a.x.split("-")[0]) - parseInt(b.x.split("-")[0])) ?? []
+  console.log({barData});
 
-	const barYScale = $derived(() =>
-		scaleBand()
+	const barYScale = scaleBand()
 			.domain(['0', '1', '2-9', '10-49', '50-99', '100-499', '500-999', '1000+'])
-			.paddingInner(0.05)
-	);
+			.paddingInner(0.5);
 
-	const lineData = $derived(stats?.itemsByHour.map((d) => ({ x: d.hour, y: d.count })) ?? []);
+	const lineData = stats.items_by_hour.map((d) => ({ x: d.hour, y: d.count }));
+  console.log({lineData});
 </script>
 
 <svelte:head>
@@ -51,27 +50,27 @@
 		<h2>Main Database (hn.sqlite)</h2>
 		<div class="stats-grid">
 			<div class="stat-card">
-				<div class="stat-value">{formatNumber(stats.totalItems)}</div>
+				<div class="stat-value">{formatNumber(stats.total_items)}</div>
 				<div class="stat-label">Total Items</div>
 			</div>
 			<div class="stat-card">
-				<div class="stat-value">{formatNumber(stats.totalUsers)}</div>
+				<div class="stat-value">{formatNumber(stats.total_users)}</div>
 				<div class="stat-label">Total Users</div>
 			</div>
 			<div class="stat-card">
-				<div class="stat-value">{stats.dbSize}</div>
+				<div class="stat-value">{data.size}</div>
 				<div class="stat-label">Database Size</div>
 			</div>
 			<div class="stat-card small">
-				<div class="stat-value">{formatNumber(stats.dbMeta.pageCount)}</div>
+				<div class="stat-value">{formatNumber(stats.page_count)}</div>
 				<div class="stat-label">Total Pages</div>
 			</div>
 			<div class="stat-card">
-				<div class="stat-value">{formatNumber(stats.rawCacheStats.count)}</div>
+				<div class="stat-value">{formatNumber(stats.raw_cache_stats.count)}</div>
 				<div class="stat-label">Cached API Responses</div>
 			</div>
 			<div class="stat-card">
-				<div class="stat-value">{formatAge(stats.rawCacheStats.oldest)}</div>
+				<div class="stat-value">{formatAge(stats.raw_cache_stats.oldest)}</div>
 				<div class="stat-label">Oldest Cache</div>
 			</div>
 		</div>
@@ -84,7 +83,7 @@
 				<Pie data={pieData} />
 			</div>
 			<div class="legend">
-				{#each stats.itemsByType as item, i (i)}
+				{#each stats.items_by_type as item, i (i)}
 					<div class="legend-item">
 						<span
 							class="legend-dot"
@@ -110,11 +109,14 @@
 			<h2>Score Distribution (Stories)</h2>
 			<div class="chart-container">
 				<LayerCake
+          ssr
 					data={barData}
 					x="y"
 					y="x"
-					yScale={barYScale()}
-					padding={{ bottom: 30, left: 70 }}
+					yScale={barYScale}
+          height={200}
+          width={300}
+          padding={{ top: 10, right: -20, bottom: -30, left: 50 }}
 				>
 					<Svg>
 						<Box />
@@ -126,32 +128,45 @@
 			</div>
 		</section>
 
-		<section class="chart-section">
-			<h2>Items Cached by Hour</h2>
-			<div class="chart-container">
-				<LayerCake
-					data={lineData}
-					x="x"
-					y="y"
-					padding={{ top: 20, right: 20, bottom: 40, left: 50 }}
-				>
-					<Svg>
-						<AxisY ticks={5} />
-						<AxisX ticks={6} format={(d) => `${d}:00`} />
-						<Line />
-					</Svg>
-				</LayerCake>
-			</div>
-		</section>
+    <section class="chart-section">
+      <h2>Items Cached by Hour</h2>
+
+      <div class="chart-container">
+        <LayerCake
+          ssr={true}
+          data={lineData}
+          x="x"
+          y="y"
+          height={200}
+          width={300}
+          padding={{ top: 10, right: -30, bottom: -30, left: 30 }}
+        >
+
+          <Svg>
+
+            <AxisY ticks={5} />
+
+            <AxisX
+              ticks={6}
+              format={(d) => `${String(d).padStart(2, '0')}:00`}
+            />
+
+            <Line />
+
+          </Svg>
+
+        </LayerCake>
+      </div>
+    </section>
 
 		<section class="chart-section">
 			<h2>Top Users</h2>
 			<div class="user-list">
-				{#each stats.topUsers as user, i (user.id)}
+				{#each stats.top_users as user, i (user.name)}
 					<div class="user-row">
 						<span class="rank">{i + 1}</span>
-						<a href="/user/{user.id}">
-							<span class="username">{user.id}</span>
+						<a href="/user/{user.name}">
+							<span class="username">{user.name}</span>
 						</a>
 						<span class="count">{formatNumber(user.karma)}</span>
 					</div>
@@ -162,7 +177,7 @@
 		<section class="chart-section full-width">
 			<h2>Top Stories</h2>
 			<div class="item-list">
-				{#each stats.topStories as story, i (story.id)}
+				{#each stats.top_stories as story, i (story.id)}
 					<div class="item-row">
 						<span class="rank">{i + 1}</span>
 						<a href="/item/{story.id}" class="item-title">{story.title}</a>
@@ -176,37 +191,25 @@
 			<h2>Search Database (search.sqlite)</h2>
 			<div class="stats-grid" style="margin-bottom: 0px">
 				<div class="stat-card">
-					<div class="stat-value">{stats.searchDbSize}</div>
-					<div class="stat-label">Search DB Size</div>
-				</div>
-				<div class="stat-card">
-					<div class="stat-value">{formatNumber(stats.indexedItemsCount)}</div>
+					<div class="stat-value">{formatNumber(stats.fts.items_count)}</div>
 					<div class="stat-label">Indexed Items</div>
 				</div>
 				<div class="stat-card">
-					<div class="stat-value">{formatNumber(stats.indexedUsersCount)}</div>
+					<div class="stat-value">{formatNumber(stats.fts.users_count)}</div>
 					<div class="stat-label">Indexed Users</div>
 				</div>
-				<div class="stat-card">
-					<div class="stat-value">{stats.searchDbMeta.pageCount}</div>
-					<div class="stat-label">Total Pages</div>
-				</div>
-				<div class="stat-card">
-					<div class="stat-value">{stats.syncStatus.totalIndexed}</div>
-					<div class="stat-label">Total Indexed</div>
-				</div>
-				<div class="stat-card">
-					<div class="stat-value">{stats.fts5Info.itemsTokenizer}</div>
-					<div class="stat-label">Items Tokenizer</div>
-				</div>
+				<!-- <div class="stat-card"> -->
+				<!-- 	<div class="stat-value">{stats.fts5Info.itemsTokenizer}</div> -->
+				<!-- 	<div class="stat-label">Items Tokenizer</div> -->
+				<!-- </div> -->
 			</div>
 		</section>
 
 		<section class="chart-section full-width">
 			<h2>Most Common Tokens (Top 20)</h2>
-			{#if stats.commonTokens.length > 0}
+			{#if stats.common_tokens.length > 0}
 				<div class="token-list">
-					{#each stats.commonTokens as token, i (token)}
+					{#each stats.common_tokens as token, i (token)}
 						<div class="token-row">
 							<span class="rank">{i + 1}</span>
 							<span class="token">{token.term}</span>
@@ -223,35 +226,31 @@
 			<h2>Statistics Database (statistics.sqlite)</h2>
 			<div class="stats-grid" style="margin-bottom: 0px">
 				<div class="stat-card">
-					<div class="stat-value">{stats.statisticsDbSize}</div>
-					<div class="stat-label">Statistics DB Size</div>
-				</div>
-				<div class="stat-card">
-					<div class="stat-value">{formatNumber(stats.requestStats.totalRequests)}</div>
+					<div class="stat-value">{formatNumber(stats.request_stats.total_requests)}</div>
 					<div class="stat-label">Total Requests</div>
 				</div>
 				<div class="stat-card">
-					<div class="stat-value">{stats.requestStats.minDuration}ms</div>
+					<div class="stat-value">{stats.request_stats.min_duration}ms</div>
 					<div class="stat-label">Min Duration</div>
 				</div>
 				<div class="stat-card">
-					<div class="stat-value">{stats.requestStats.avgDuration.toFixed(0)}ms</div>
+					<div class="stat-value">{stats.request_stats.avg_duration.toFixed(0)}ms</div>
 					<div class="stat-label">Avg Duration</div>
 				</div>
 				<div class="stat-card">
-					<div class="stat-value">{stats.requestStats.p95Duration}ms</div>
+					<div class="stat-value">{stats.request_stats.p95_duration}ms</div>
 					<div class="stat-label">P95 Duration</div>
 				</div>
 				<div class="stat-card">
-					<div class="stat-value">{stats.requestStats.maxDuration}ms</div>
+					<div class="stat-value">{stats.request_stats.max_duration}ms</div>
 					<div class="stat-label">Max Duration</div>
 				</div>
 				<div class="stat-card">
-					<div class="stat-value">{formatNumber(stats.queryStats.totalQueries)}</div>
+					<div class="stat-value">{formatNumber(stats.query_stats.total_queries)}</div>
 					<div class="stat-label">Total Queries</div>
 				</div>
 				<div class="stat-card">
-					<div class="stat-value">{stats.queryStats.avgDuration.toFixed(1)}ms</div>
+					<div class="stat-value">{stats.query_stats.avg_duration.toFixed(1)}ms</div>
 					<div class="stat-label">Avg Query Duration</div>
 				</div>
 			</div>
@@ -259,9 +258,9 @@
 
 		<section class="chart-section">
 			<h2>Requests by Status</h2>
-			{#if stats.requestStats.requestsByStatus.length > 0}
+			{#if stats.request_status.length > 0}
 				<div class="status-list">
-					{#each stats.requestStats.requestsByStatus as item}
+					{#each stats.request_status as item}
 						<div class="status-row">
 							<span
 								class="status-code"
@@ -280,13 +279,13 @@
 
 		<section class="chart-section">
 			<h2>Top Requested URLs</h2>
-			{#if stats.requestStats.requestsByUrl.length > 0}
+			{#if stats.request_urls.length > 0}
 				<div class="url-list">
-					{#each stats.requestStats.requestsByUrl as item}
+					{#each stats.request_urls as item}
 						<div class="url-row">
 							<span class="url">{item.url.replace(/^https?:\/\/[^/]+/, '')}</span>
 							<span class="count">{formatNumber(item.count)}</span>
-							<span class="duration">{item.avgDuration.toFixed(0)}ms avg</span>
+							<span class="duration">{item.avg_duration.toFixed(0)}ms avg</span>
 						</div>
 					{/each}
 				</div>
@@ -297,13 +296,13 @@
 
 		<section class="chart-section full-width">
 			<h2>Top Queries</h2>
-			{#if stats.queryStats.topQueries.length > 0}
+			{#if stats.query_grouped.length > 0}
 				<div class="query-list">
-					{#each stats.queryStats.topQueries as query}
+					{#each stats.query_grouped as query}
 						<div class="query-row">
 							<span class="count">{formatNumber(query.count)}</span>
 							<span class="sql">{query.sql}</span>
-							<span class="duration">{query.duration.toFixed(0)}ms avg</span>
+							<span class="duration">{query.duration?.toFixed(0)}ms avg</span>
 						</div>
 					{/each}
 				</div>
@@ -314,9 +313,9 @@
 
 		<section class="chart-section full-width">
 			<h2>Slowest Queries</h2>
-			{#if stats.queryStats.slowQueries.length > 0}
+			{#if stats.slowest_queries.length > 0}
 				<div class="query-list">
-					{#each stats.queryStats.slowQueries as query}
+					{#each stats.slowest_queries as query}
 						<div class="query-row">
 							<span class="duration">{Math.floor(query.duration * 10) / 10}ms</span>
 							<span class="sql">{query.sql}</span>
@@ -327,7 +326,7 @@
 				<p class="empty-message">No query data available</p>
 			{/if}
 		</section>
-	</div>
+</div>
 {/if}
 
 <style>

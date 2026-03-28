@@ -16,6 +16,20 @@ type RunOptions<T> = {
 
 type StatementId = keyof typeof sqlStatements;
 
+function limitObjectStrings<T = unknown>(v:T):T{
+  if(v && typeof v === "object"){
+    return Object
+      .fromEntries(Object.entries(v as any)
+      .map(([k,v]:[string,unknown]) => [k, limitObjectStrings(v)])) as T
+  }
+
+  if(typeof v === "string" && v.length > 50) {
+    return v.slice(0, 47) +"..." as T;
+  }
+
+  return v;
+}
+
 export type ExtendedDatabase = DatabaseSync & {
 	path: string;
 	execSafe: (statement: StatementId|string) => void;
@@ -65,8 +79,8 @@ export function openDatabase(
 		const preparedStatements: Record<string, StatementSync> = {};
     function getStatement(sqlOrId:string){
       let sql = sqlOrId in sqlStatements
-      ? sqlStatements[sqlOrId as StatementId]
-      : sqlOrId;
+        ? sqlStatements[sqlOrId as StatementId]
+        : sqlOrId;
 
       if(sql in preparedStatements){
         return preparedStatements[sql];
@@ -88,10 +102,14 @@ export function openDatabase(
 							.all(...(inputs as SQLInputValue[]))
 							.map((r) => opts?.deserialize?.(r) ?? r) as T[];
 					} catch (e) {
-						logger.error('failed to run statement.all', { e, sql: statement.expandedSQL, inputs });
+						logger.error('failed to run statement.all', { 
+              e, 
+              sql: statement.expandedSQL, 
+              inputs: limitObjectStrings(inputs) 
+            });
 						throw e;
 					} finally {
-            logger.debug("run statement", {statementId, sql: statement.expandedSQL, inputs})
+            logger.debug("run statement", {statementId, sql: statement.expandedSQL, inputs: limitObjectStrings(inputs)})
 						const duration = performance.now() - start;
 						dbOpts?.queryCallback?.({ sql: statement.sourceSQL, duration });
 					}
@@ -102,7 +120,11 @@ export function openDatabase(
 						const row = statement.get(...(inputs as SQLInputValue[]));
 						return (row ? (opts?.deserialize?.(row) ?? row) : undefined) as T;
 					} catch (e) {
-						logger.error('failed to run statement.get', { e, sql: statement.expandedSQL, inputs });
+						logger.error('failed to run statement.get', { 
+              e, 
+              sql: statement.expandedSQL, 
+              inputs: limitObjectStrings(inputs) 
+            });
 						throw e;
 					} finally {
 						dbOpts?.queryCallback?.({
@@ -116,7 +138,11 @@ export function openDatabase(
 					try {
 						return statement.run(...(inputs as SQLInputValue[]));
 					} catch (e) {
-						logger.error('failed to run statement.get', { e, sql: statement.expandedSQL, inputs });
+						logger.error('failed to run statement.run', { 
+              e, 
+              sql: statement.expandedSQL, 
+              inputs: limitObjectStrings(inputs) 
+            });
 						throw e;
 					} finally {
 						dbOpts?.queryCallback?.({
