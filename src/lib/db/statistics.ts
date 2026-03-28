@@ -31,10 +31,10 @@ function formatBytes(bytes: number): string {
 
 async function getSize(){
   try {
-    const url = new URL(db.path);
     console.log(db.path);
-    const stats = await stat(url.pathname);
+    const url = new URL(db.path);
     console.log(url.pathname)
+    const stats = await stat(url.pathname);
     return formatBytes(stats.size);
   } catch{
     return null
