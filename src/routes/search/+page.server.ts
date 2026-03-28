@@ -15,7 +15,7 @@ type UserResult = {
 };
 type CommentResult = {
 	type: 'comment';
-	results: Item[];
+	results: (Item & {text_snippet?:string})[];
 	total: number;
 	durationSearchMs: number;
 };

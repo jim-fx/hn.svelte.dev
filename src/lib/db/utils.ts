@@ -59,7 +59,7 @@ type DatabaseOptions = {
 
 
 export function openDatabase(
-	dbName: 'hn.sqlite' | 'search.sqlite' | 'statistics.sqlite',
+	dbName: 'hn.sqlite' | 'statistics.sqlite',
 	dbOpts?: DatabaseOptions
 ): ExtendedDatabase {
 	const logger = createLogger('db:' + dbName);

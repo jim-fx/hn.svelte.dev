@@ -33,7 +33,8 @@ export async function getStatistics() {
 	const { data } = db
     .run("get_statistics")
     .get();
-  const stats = await stat(db.path);
+  const url = new URL(db.path);
+  const stats = await stat(url.pathname);
   return {
     is_compressed: IS_COMPRESSED,
     size: formatBytes(stats.size),
