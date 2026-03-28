@@ -9,7 +9,6 @@
 	import Box from '$lib/charts/Box.svelte';
 
 	const { data } = $props();
-  console.log(data);
 	const stats = $derived(data?.db);
 
 	function formatNumber(n: number) {
@@ -29,14 +28,11 @@
 	const barData = stats?.score_distribution
     .map((d) => ({ x: d.bucket, y: d.count }))
     .sort((a,b) => parseInt(a.x.split("-")[0]) - parseInt(b.x.split("-")[0])) ?? []
-  console.log({barData});
 
 	const barYScale = scaleBand()
-			.domain(['0', '1', '2-9', '10-49', '50-99', '100-499', '500-999', '1000+'])
 			.paddingInner(0.5);
 
 	const lineData = stats.items_by_hour.map((d) => ({ x: d.hour, y: d.count }));
-  console.log({lineData});
 </script>
 
 <svelte:head>
@@ -116,7 +112,7 @@
 					yScale={barYScale}
           height={200}
           width={300}
-          padding={{ top: 10, right: -20, bottom: -30, left: 50 }}
+          padding={{ top: 10, right: -30, bottom: -30, left: 40 }}
 				>
 					<Svg>
 						<Box />
@@ -147,8 +143,8 @@
             <AxisY ticks={5} />
 
             <AxisX
-              ticks={6}
-              format={(d) => `${String(d).padStart(2, '0')}:00`}
+              ticks={8}
+              format={(d) => `${String(d)}`}
             />
 
             <Line />

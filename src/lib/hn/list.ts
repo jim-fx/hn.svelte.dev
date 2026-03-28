@@ -21,7 +21,6 @@ export async function fetchRaw(path: string) {
   logger.debug("fetching list", {path});
 	const response = await request<RawRow>(path);
 	storeRawCache(path, response);
-  console.log({response});
 	logger.info(`fetched raw ${path}`);
 	return response;
 }

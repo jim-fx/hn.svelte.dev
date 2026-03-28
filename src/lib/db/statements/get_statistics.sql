@@ -47,8 +47,11 @@ SELECT json_object(
         CASE 
           WHEN score = 0 THEN '0'
           WHEN score = 1 THEN '1'
+          WHEN score = 2 THEN '2'
           WHEN score < 10 THEN '2-9'
-          WHEN score < 50 THEN '10-49'
+          WHEN score < 20 THEN '10-19'
+          WHEN score < 30 THEN '20-29'
+          WHEN score < 50 THEN '30-49'
           WHEN score < 100 THEN '50-99'
           WHEN score < 500 THEN '100-499'
           WHEN score < 1000 THEN '500-999'

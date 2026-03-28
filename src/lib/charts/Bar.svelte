@@ -9,8 +9,6 @@
 		yScale: any;
 	}
 	const { data, xGet, yGet, yScale } = getContext<LayerCakeContext>('LayerCake');
-  
-  console.log({data})
 
 	let { fill = '#4ecdc4' }: { fill?: string } = $props();
 </script>
