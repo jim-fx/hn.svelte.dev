@@ -1,4 +1,5 @@
 import { openDatabase, type ExtendedDatabase } from './utils';
+import migrations from "./migrations/?all"
 
 let db: ExtendedDatabase;
 let isSetup = false;
@@ -8,6 +9,7 @@ db = openDatabase('hn.sqlite', { queryCallback: (data) => {
 	if (isSetup) db.run("insert_query").run(data);
 }});
 db.execSafe("setup_hn");
+db.migrate(migrations);
 
 const statisticsDb = openDatabase('statistics.sqlite');
 statisticsDb.execSafe("setup_statistics");

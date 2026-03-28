@@ -24,9 +24,6 @@ CREATE TABLE IF NOT EXISTS items (
   cached_at   INTEGER NOT NULL  -- Unix timestamp (ms) of last upsert
 );
 
-ALTER TABLE items ADD COLUMN IF NOT EXISTS first_cached_at INTEGER;
-
-
 -- Setup item indices
 CREATE INDEX IF NOT EXISTS idx_items_type ON items(type);
 CREATE INDEX IF NOT EXISTS idx_items_by ON items(by);
@@ -82,8 +79,6 @@ CREATE TABLE IF NOT EXISTS users (
   cached_at   INTEGER NOT NULL,  -- Unix timestamp (ms) of last upsert
   first_cached_at INTEGER        -- Unix timestamp (ms) of first cache
 );
-
-ALTER TABLE users ADD COLUMN IF NOT EXISTS first_cached_at INTEGER;
 
 -- User full text search
 CREATE VIRTUAL TABLE IF NOT EXISTS users_fts USING fts5(

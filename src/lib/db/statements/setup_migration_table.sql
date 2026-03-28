@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS migrations (
+  name TEXT NOT NULL,
+  sql TEXT NOT NULL,
+  run_at INTEGER NOT NULL
+);
