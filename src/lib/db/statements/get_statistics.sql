@@ -1,4 +1,13 @@
 SELECT json_object(
+  -- Table schemas (what .schema returns)
+  'table_schemas', (
+    SELECT group_concat(sql, '
+')
+    FROM sqlite_master
+    WHERE sql IS NOT NULL
+    ORDER BY type, name
+  ),
+
   -- Total counts
   'total_items', (SELECT COUNT(*) FROM items),
   'total_users', (SELECT COUNT(*) FROM users),
