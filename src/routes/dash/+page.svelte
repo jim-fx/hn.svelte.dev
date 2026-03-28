@@ -9,6 +9,7 @@
 	import Box from '$lib/charts/Box.svelte';
 
 	const { data } = $props();
+  console.log({data});
 	const stats = $derived(data?.db);
 
 	function formatNumber(n: number) {

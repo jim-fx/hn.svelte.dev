@@ -45,7 +45,11 @@ export async function getStatistics() {
 	const { data } = db
     .run("get_statistics")
     .get();
+
+  const vfs_list = db.run('PRAGMA vfs_list').all().map(r => r.vfs).join(', ');
+
   return {
+    vfs_list,
     is_compressed: IS_COMPRESSED,
     size: await getSize(),
     db: JSON.parse(data as string)

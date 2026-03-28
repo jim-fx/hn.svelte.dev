@@ -37,6 +37,7 @@ SELECT json_object(
     )
   ),
 
+
   -- Score distribution
   'score_distribution', (
     SELECT json_group_array(
