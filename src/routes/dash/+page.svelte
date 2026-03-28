@@ -9,7 +9,7 @@
 	import Box from '$lib/charts/Box.svelte';
 
 	const { data } = $props();
-  console.log({data});
+	console.log({ data });
 	const stats = $derived(data?.db);
 
 	function formatNumber(n: number) {
@@ -24,16 +24,20 @@
 		return `${Math.floor(hours / 24)}d ago`;
 	}
 
-	const pieData = stats?.items_by_type?.map((d) => ({ label: d.type, value: d.count })) ?? []
+	const pieData = stats?.items_by_type?.map((d) => ({ label: d.type, value: d.count })) ?? [];
 
-	const barData = stats?.score_distribution
-    .map((d) => ({ x: d.bucket, y: d.count }))
-    .sort((a,b) => parseInt(a.x.split("-")[0]) - parseInt(b.x.split("-")[0])) ?? []
+	const barData =
+		stats?.score_distribution
+			.map((d) => ({ x: d.bucket, y: d.count }))
+			.sort((a, b) => parseInt(a.x.split('-')[0]) - parseInt(b.x.split('-')[0])) ?? [];
 
-	const barYScale = scaleBand()
-			.paddingInner(0.5);
+	const barYScale = scaleBand().paddingInner(0.5);
 
 	const lineData = stats.items_by_hour.map((d) => ({ x: d.hour, y: d.count }));
+
+	const storiesOverTime = stats.stories_over_time.map((d) => ({ x: d.date, y: d.cumulative }));
+	const commentsOverTime = stats.comments_over_time.map((d) => ({ x: d.date, y: d.cumulative }));
+	const usersOverTime = stats.users_over_time.map((d) => ({ x: d.date, y: d.cumulative }));
 </script>
 
 <svelte:head>
@@ -106,14 +110,14 @@
 			<h2>Score Distribution (Stories)</h2>
 			<div class="chart-container">
 				<LayerCake
-          ssr
+					ssr
 					data={barData}
 					x="y"
 					y="x"
 					yScale={barYScale}
-          height={200}
-          width={300}
-          padding={{ top: 10, right: -30, bottom: -30, left: 40 }}
+					height={200}
+					width={300}
+					padding={{ top: 10, right: -30, bottom: -30, left: 40 }}
 				>
 					<Svg>
 						<Box />
@@ -125,36 +129,101 @@
 			</div>
 		</section>
 
-    <section class="chart-section">
-      <h2>Items Cached by Hour</h2>
+		<section class="chart-section">
+			<h2>Items Cached by Hour</h2>
 
-      <div class="chart-container">
-        <LayerCake
-          ssr={true}
-          data={lineData}
-          x="x"
-          y="y"
-          height={200}
-          width={300}
-          padding={{ top: 10, right: -30, bottom: -30, left: 30 }}
-        >
+			<div class="chart-container">
+				<LayerCake
+					ssr={true}
+					data={lineData}
+					x="x"
+					y="y"
+					height={200}
+					width={300}
+					padding={{ top: 10, right: -30, bottom: -30, left: 30 }}
+				>
+					<Svg>
+						<AxisY ticks={5} />
 
-          <Svg>
+						<AxisX ticks={8} format={(d) => `${String(d)}`} />
 
-            <AxisY ticks={5} />
+						<Line />
+					</Svg>
+				</LayerCake>
+			</div>
+		</section>
 
-            <AxisX
-              ticks={8}
-              format={(d) => `${String(d)}`}
-            />
+		<section class="chart-section full-width">
+			<h2>Stories Cached Over Time</h2>
 
-            <Line />
+			<div class="chart-container">
+				<LayerCake
+					ssr={true}
+					data={storiesOverTime}
+					x="x"
+					y="y"
+					height={200}
+					width={600}
+					padding={{ top: 10, right: -30, bottom: -30, left: 50 }}
+				>
+					<Svg>
+						<AxisY ticks={5} format={(d) => formatNumber(d)} />
 
-          </Svg>
+						<AxisX ticks={8} />
 
-        </LayerCake>
-      </div>
-    </section>
+						<Line />
+					</Svg>
+				</LayerCake>
+			</div>
+		</section>
+
+		<section class="chart-section full-width">
+			<h2>Comments Cached Over Time</h2>
+
+			<div class="chart-container">
+				<LayerCake
+					ssr={true}
+					data={commentsOverTime}
+					x="x"
+					y="y"
+					height={200}
+					width={600}
+					padding={{ top: 10, right: -30, bottom: -30, left: 50 }}
+				>
+					<Svg>
+						<AxisY ticks={5} format={(d) => formatNumber(d)} />
+
+						<AxisX ticks={8} />
+
+						<Line />
+					</Svg>
+				</LayerCake>
+			</div>
+		</section>
+
+		<section class="chart-section full-width">
+			<h2>Users Cached Over Time</h2>
+
+			<div class="chart-container">
+				<LayerCake
+					ssr={true}
+					data={usersOverTime}
+					x="x"
+					y="y"
+					height={200}
+					width={600}
+					padding={{ top: 10, right: -30, bottom: -30, left: 50 }}
+				>
+					<Svg>
+						<AxisY ticks={5} format={(d) => formatNumber(d)} />
+
+						<AxisX ticks={8} />
+
+						<Line />
+					</Svg>
+				</LayerCake>
+			</div>
+		</section>
 
 		<section class="chart-section">
 			<h2>Top Users</h2>
@@ -323,7 +392,7 @@
 				<p class="empty-message">No query data available</p>
 			{/if}
 		</section>
-</div>
+	</div>
 {/if}
 
 <style>

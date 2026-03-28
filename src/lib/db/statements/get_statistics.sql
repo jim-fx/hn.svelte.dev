@@ -218,5 +218,56 @@ SELECT json_object(
       ORDER BY cnt DESC
       LIMIT 10
     )
+  ),
+
+  -- Cumulative stories over time
+  'stories_over_time', (
+    SELECT json_group_array(
+      json_object('date', date, 'count', cnt, 'cumulative', cumulative)
+    )
+    FROM (
+      SELECT 
+        date(first_cached_at / 1000, 'unixepoch', 'localtime') AS date,
+        COUNT(*) AS cnt,
+        SUM(COUNT(*)) OVER (ORDER BY date(first_cached_at / 1000, 'unixepoch', 'localtime')) AS cumulative
+      FROM items
+      WHERE type = 'story' AND first_cached_at IS NOT NULL
+      GROUP BY date
+      ORDER BY date
+    )
+  ),
+
+  -- Cumulative comments over time
+  'comments_over_time', (
+    SELECT json_group_array(
+      json_object('date', date, 'count', cnt, 'cumulative', cumulative)
+    )
+    FROM (
+      SELECT 
+        date(first_cached_at / 1000, 'unixepoch', 'localtime') AS date,
+        COUNT(*) AS cnt,
+        SUM(COUNT(*)) OVER (ORDER BY date(first_cached_at / 1000, 'unixepoch', 'localtime')) AS cumulative
+      FROM items
+      WHERE type = 'comment' AND first_cached_at IS NOT NULL
+      GROUP BY date
+      ORDER BY date
+    )
+  ),
+
+  -- Cumulative users over time
+  'users_over_time', (
+    SELECT json_group_array(
+      json_object('date', date, 'count', cnt, 'cumulative', cumulative)
+    )
+    FROM (
+      SELECT 
+        date(first_cached_at / 1000, 'unixepoch', 'localtime') AS date,
+        COUNT(*) AS cnt,
+        SUM(COUNT(*)) OVER (ORDER BY date(first_cached_at / 1000, 'unixepoch', 'localtime')) AS cumulative
+      FROM users
+      WHERE first_cached_at IS NOT NULL
+      GROUP BY date
+      ORDER BY date
+    )
   )
 ) as data;

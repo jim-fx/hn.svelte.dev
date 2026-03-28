@@ -1,9 +1,9 @@
 INSERT INTO items (
   id, type, by, time, text, dead, parent, poll,
-  url, score, title, descendants, deleted, kids, parts, cached_at
+  url, score, title, descendants, deleted, kids, parts, cached_at, first_cached_at
 ) VALUES (
   :id, :type, :by, :time, :text, :dead, :parent, :poll,
-  :url, :score, :title, :descendants, :deleted, :kids, :parts, :cached_at
+  :url, :score, :title, :descendants, :deleted, :kids, :parts, :cached_at, :first_cached_at
 )
 ON CONFLICT(id) DO UPDATE SET
   type        = excluded.type,
@@ -20,4 +20,5 @@ ON CONFLICT(id) DO UPDATE SET
   deleted     = excluded.deleted,
   kids        = excluded.kids,
   parts       = excluded.parts,
-  cached_at   = excluded.cached_at;
+  cached_at   = excluded.cached_at,
+  first_cached_at = COALESCE(items.first_cached_at, excluded.first_cached_at);

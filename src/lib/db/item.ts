@@ -1,6 +1,5 @@
 import type { Item, ItemWithComments } from '$lib/hn/types';
 import type { SQLInputValue, SQLOutputValue } from 'node:sqlite';
-import statements from './statements';
 import { db } from './db';
 
 function serialise(item: Item): Record<string, SQLInputValue> {
@@ -20,7 +19,8 @@ function serialise(item: Item): Record<string, SQLInputValue> {
 		deleted: item.deleted ? 1 : 0,
 		kids: item.kids ? JSON.stringify(item.kids) : null,
 		parts: item.parts ? JSON.stringify(item.parts) : null,
-		cached_at: Date.now()
+		cached_at: Date.now(),
+		first_cached_at: Date.now()
 	};
 }
 
@@ -48,17 +48,17 @@ function deserialise(row: Record<string, SQLOutputValue | undefined>) {
 	return item as Item;
 }
 export function getItem(id: number) {
-	const row = db.run(statements.select_item).get({ id });
+	const row = db.run("select_item").get({ id });
 	return row ? deserialise(row) : undefined;
 }
 
 export function storeItem(item: Item) {
 	if (!item) return;
-	return db.run(statements.upsert_item).run(serialise(item));
+	return db.run("upsert_item").run(serialise(item));
 }
 
 export function getItemWithComments(id: number) {
-	const rows = db.run(statements.select_item_with_comments).all({ id });
+	const rows = db.run("select_item_with_comments").all({ id });
 
 	if (!rows || rows.length === 0) return undefined;
 
@@ -90,7 +90,7 @@ export function getItemWithComments(id: number) {
 }
 
 export function getItemsWithComments(ids: number[]) {
-	const rows = db.run(statements.select_items_with_comments).all({ ids: JSON.stringify(ids) });
+	const rows = db.run("select_items_with_comments").all({ ids: JSON.stringify(ids) });
 
 	const items = rows.map(deserialise);
 

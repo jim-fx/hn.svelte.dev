@@ -1,8 +1,6 @@
 import { createLogger } from '$lib/logger';
 import type { Item, User } from '$lib/hn/types';
-import statements from './statements';
 import { db } from './db';
-
 
 const logger = createLogger('hn:search');
 
@@ -13,11 +11,11 @@ export async function searchItems(query: string, searchInBody: boolean = false, 
     const useFTS = query.length >= 3;
     const searchSql = useFTS
         ? searchInBody 
-          ? statements.search_item_body 
-          : statements.search_item
+          ? "search_item_body"
+          : "search_item"
         : searchInBody 
-          ? statements.search_item_body_like 
-          : statements.search_item_like;
+          ? "search_item_body_like"
+          : "search_item_like"
 
     const results = db
         .run<Item & { title_snippet?:string, body_snippet?: string }>(searchSql)

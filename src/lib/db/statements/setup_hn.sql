@@ -24,6 +24,8 @@ CREATE TABLE IF NOT EXISTS items (
   cached_at   INTEGER NOT NULL  -- Unix timestamp (ms) of last upsert
 );
 
+ALTER TABLE items ADD COLUMN IF NOT EXISTS first_cached_at INTEGER;
+
 
 -- Setup item indices
 CREATE INDEX IF NOT EXISTS idx_items_type ON items(type);
@@ -77,8 +79,11 @@ CREATE TABLE IF NOT EXISTS users (
   karma       INTEGER,
   about       TEXT,
   submitted   TEXT NOT NULL,    -- JSON array of integers
-  cached_at   INTEGER NOT NULL  -- Unix timestamp (ms) of last upsert
+  cached_at   INTEGER NOT NULL,  -- Unix timestamp (ms) of last upsert
+  first_cached_at INTEGER        -- Unix timestamp (ms) of first cache
 );
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS first_cached_at INTEGER;
 
 -- User full text search
 CREATE VIRTUAL TABLE IF NOT EXISTS users_fts USING fts5(
