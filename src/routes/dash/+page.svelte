@@ -1,5 +1,8 @@
 <script lang="ts">
 	import { LayerCake, Svg } from 'layercake';
+  import { codeToHtml,createHighlighterCoreSync, createJavaScriptRegexEngine } from 'shiki'
+  import vitesseDark from 'shiki/themes/vitesse-dark.mjs';
+  import sql from "shiki/langs/sql.mjs"
 	import { scaleBand } from 'd3-scale';
 	import Bar from '$lib/charts/Bar.svelte';
 	import Pie from '$lib/charts/Pie.svelte';
@@ -9,12 +12,18 @@
 	import Box from '$lib/charts/Box.svelte';
 
 	const { data } = $props();
-	console.log({ data });
-	const stats = $derived(data?.db);
+		const stats = $derived(data?.db);
 
 	function formatNumber(n: number) {
 		return n?.toLocaleString() ?? '';
 	}
+
+  const shiki = createHighlighterCoreSync({
+    langs: [sql],
+    themes: [vitesseDark],
+    engine: createJavaScriptRegexEngine()
+  })
+
 
 	function formatAge(ms: number | null) {
 		if (!ms) return 'N/A';
@@ -43,6 +52,9 @@
 <svelte:head>
 	<title>Cache Dashboard</title>
 </svelte:head>
+
+
+{@html `<script>console.log(${JSON.stringify(data)})</script>`}
 
 <h1>Cache Dashboard</h1>
 
@@ -364,11 +376,13 @@
 			<h2>Top Queries</h2>
 			{#if stats.query_grouped.length > 0}
 				<div class="query-list">
-					{#each stats.query_grouped as query}
+					{#each stats.query_grouped as query, i (i)}
+            <div class="query-header">
+              <span class="count">{formatNumber(query.count)} Count</span>
+              <span class="duration">{query.avg_duration.toFixed(0)}ms avg</span>
+            </div>
 						<div class="query-row">
-							<span class="count">{formatNumber(query.count)}</span>
-							<span class="sql">{query.sql}</span>
-							<span class="duration">{query.duration?.toFixed(0)}ms avg</span>
+              <span class="sql">{@html shiki.codeToHtml(query.sql, {lang: "sql", theme:"vitesse-dark"})}</span>
 						</div>
 					{/each}
 				</div>
@@ -381,10 +395,12 @@
 			<h2>Slowest Queries</h2>
 			{#if stats.slowest_queries.length > 0}
 				<div class="query-list">
-					{#each stats.slowest_queries as query}
+					{#each stats.slowest_queries as query, i (i)}
+            <div class="query-header">
+              <span class="duration">{Math.floor(query.duration * 10) / 10}ms</span>
+            </div>
 						<div class="query-row">
-							<span class="duration">{Math.floor(query.duration * 10) / 10}ms</span>
-							<span class="sql">{query.sql}</span>
+              <span class="sql">{@html shiki.codeToHtml(query.sql, {lang: "sql", theme:"vitesse-dark"})}</span>
 						</div>
 					{/each}
 				</div>
@@ -687,15 +703,29 @@
 		color: white;
 	}
 
-	.url,
-	.sql {
+	.url {
 		flex: 1;
 		font-family: monospace;
 		font-size: 0.75rem;
 		word-break: break-all;
 	}
 
-	.duration {
+  .sql > :global(pre){
+    background-color: transparent !important;
+    margin-block: 0 !important;
+  }
+
+  .query-header > * {
+    border-left: solid 2px var(--fg-lighter); 
+    padding-left: 0.5rem;
+  }
+
+  .query-header > *:first-child {
+    border-left: none;
+    padding-left: 0;
+  }
+
+	.duration,.count {
 		font-family: monospace;
 		font-size: 0.75rem;
 		color: var(--fg-light);

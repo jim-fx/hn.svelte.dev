@@ -87,7 +87,7 @@ export function openDatabase(
 
 		const preparedStatements: Record<string, StatementSync> = {};
 		function getStatement(sqlOrId: string) {
-			let sql = sqlOrId in sqlStatements ? sqlStatements[sqlOrId as StatementId] : sqlOrId;
+			const sql = sqlOrId in sqlStatements ? sqlStatements[sqlOrId as StatementId] : sqlOrId;
 
 			if (sql in preparedStatements) {
 				return preparedStatements[sql];
@@ -103,7 +103,7 @@ export function openDatabase(
 			const statement = getStatement(statementId);
 			return {
 				all: (...inputs: (SQLInputValue | Record<string, SQLInputValue>)[]) => {
-					let start = performance.now();
+					const start = performance.now();
 					try {
 						return statement
 							.all(...(inputs as SQLInputValue[]))
@@ -167,9 +167,7 @@ export function openDatabase(
 
 		db.prepareSafe = (statement: string) => {
 			try {
-				const prepared = db.prepare(statement);
-				logger.debug(`prepared statement`, { dbName, statement });
-				return prepared;
+				return db.prepare(statement);
 			} catch (error) {
 				logger.error(`Failed to prepare statement`, { statement, error });
 				throw error;
@@ -197,6 +195,7 @@ export function openDatabase(
 					});
 				} catch (e) {
 					logger.error('failed to run migration', { key, error: e });
+          throw e;
 				}
 			}
 		};

@@ -1,4 +1,5 @@
 import { createLogger } from '$lib/logger';
+import * as stats from "./statistics"
 import type { Item, User } from '$lib/hn/types';
 import { db } from './db';
 
@@ -36,6 +37,13 @@ export async function searchItems(query: string, searchInBody: boolean = false, 
     const t2 = performance.now();
 
     logger.info("search results items", { durationMs: Math.floor(t2 - t0), count: results.length, type, query });
+
+    stats.storeSearch({
+      query,
+      type,
+      duration: t2 - t0,
+      count: results.length
+    });
 
     return {
       results,
@@ -85,8 +93,15 @@ export async function searchUsers(query: string, searchInAbout: boolean = false)
         query
     });
 
+    stats.storeSearch({
+      query,
+      type: "user",
+      duration: t1 - t0,
+      count: results.length
+    });
+
     return {
-        results, // Now contains highlighted matchedAbout/matchedId directly from SQL
+        results,
         total,
         durationSearchMs: t1 - t0
     };

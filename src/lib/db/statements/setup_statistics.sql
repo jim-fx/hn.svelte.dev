@@ -9,3 +9,10 @@ CREATE TABLE IF NOT EXISTS queries (
   sql TEXT NOT NULL,
   duration INTEGER NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS searches (
+  query TEXT NOT NULL,
+  type TEXT NOT NULL,
+  result_count INTEGER NOT NULL,
+  duration INTEGER NOT NULL
+)

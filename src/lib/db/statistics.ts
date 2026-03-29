@@ -22,6 +22,17 @@ export function storeQuery(query: DbQuery) {
 	return db.run("insert_query").run(query);
 }
 
+type Search = {
+  query: string;
+  duration: number;
+  count: number;
+  type: string;
+}
+
+export function storeSearch(search: Search){
+  return db.run("insert_search_statistic").run(search);
+}
+
 function formatBytes(bytes: number): string {
 	if (bytes < 1024) return `${bytes} B`;
 	if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;

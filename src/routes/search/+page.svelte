@@ -6,8 +6,6 @@
 
 	const { data } = $props();
   
-  $inspect({data});
-
 	// svelte-ignore state_referenced_locally
   let query: string = $state(data.query ?? '');
 	// svelte-ignore state_referenced_locally
@@ -29,6 +27,7 @@
 		} else {
 			u.searchParams.delete('body');
 		}
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
 		goto(u.toString());
 	});
 </script>
@@ -66,7 +65,7 @@
 {/if}
 
 {#if data.type === 'user'}
-	{#each data.results as user, i}
+	{#each data.results as user, i (user)}
 		<article>
 			<h2>
 				<a href="/user/{user.name}">
@@ -93,7 +92,7 @@
 		</article>
 	{/each}
 {:else if data.type === 'comment'}
-	{#each data.results as item, i}
+	{#each data.results as item, i (item.id)}
 		{#if item}
 			<article>
 				<h2>
@@ -117,7 +116,7 @@
 		{/if}
 	{/each}
 {:else}
-	{#each data.results as item, i}
+	{#each data.results as item, i (item.id)}
 		{#if item}
 			<ItemSummary {item} index={i} showBodyPreview={searchInBody} />
 		{/if}

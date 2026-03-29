@@ -229,6 +229,31 @@ SELECT json_object(
     )
   ),
 
+  'top_searches', (
+    SELECT json_group_array(
+      json_object('query', query, 'count', cnt, 'avg_duration', avg_dur)
+    )
+    FROM (
+      SELECT query, COUNT(*) AS cnt, AVG(duration) AS avg_dur
+      FROM statistics.searches
+      GROUP BY query
+      ORDER BY cnt DESC
+      LIMIT 10
+    )
+  ),
+
+  'slowest_searches', (
+    SELECT json_group_array(
+      json_object('query', query, 'duration', duration)
+    )
+    FROM (
+      SELECT query, duration
+      FROM statistics.searches
+      ORDER BY duration DESC
+      LIMIT 10
+    )
+  ),
+
   -- Cumulative stories over time
   'stories_over_time', (
     SELECT json_group_array(
