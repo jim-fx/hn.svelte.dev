@@ -19,6 +19,8 @@ export type Item = {
 	parts?: number[];
 	descendants?: number;
 	cached_at: Date;
+	first_cached_at: Date;
+	top_position?: number;
 };
 
 export type ItemWithComments = Item & {
@@ -27,7 +29,7 @@ export type ItemWithComments = Item & {
 
 export type User = {
 	id: number;
-  name: string;
+	name: string;
 	created: number;
 	karma: number;
 	about?: string;

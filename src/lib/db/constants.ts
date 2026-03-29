@@ -3,13 +3,13 @@ import { DB_DIR } from '$env/static/private';
 import { existsSync } from 'fs';
 import { mkdirSync } from 'node:fs';
 
-function existsSafe(){
-  try {
-    return existsSync(ZSTD_PATH) || existsSync(ZSTD_PATH+".so")
-  }catch {
-    //
-  }
-  return false;
+function existsSafe() {
+	try {
+		return existsSync(ZSTD_PATH) || existsSync(ZSTD_PATH + '.so');
+	} catch {
+		//
+	}
+	return false;
 }
 
 const ZSTD_PATH = resolve(DB_DIR, 'zstd_vfs.so');

@@ -1,59 +1,55 @@
 import * as db from '$lib/db';
+import { ITEM_STALE_MS } from './constants';
 import { fetchItem, fetchItemInBackground } from './item';
 import type { ItemWithComments } from './types';
-import { fetchUser } from './user';
 
-function getMissingCommentIds(item:ItemWithComments){
-  const existingIds = new Set<number>();
-  const missingIds = new Set<number>();
-  const stack = [item];
-  while(stack.length){
-    const i = stack.pop();
-    if(!i) continue;
-    existingIds.add(i.id);
-    if(i.comments){
-      for(const c of i.comments){
-        existingIds.add(c.id)
-      }
-      stack.push(...i.comments);
-    }
-    if(i.kids) {
-      for(const id of i.kids){
-        if(!existingIds.has(id)){
-          missingIds.add(id)
-        }
-      }
-    }
-  }
-  return [...missingIds.values()];
+function getMissingCommentIds(item: ItemWithComments) {
+	const existingIds = new Set<number>();
+	const missingIds = new Set<number>();
+	const stack = [item];
+	while (stack.length) {
+		const i = stack.pop();
+		if (!i) continue;
+		existingIds.add(i.id);
+		if (i.comments) {
+			for (const c of i.comments) {
+				existingIds.add(c.id);
+			}
+			stack.push(...i.comments);
+		}
+		if (i.kids) {
+			for (const id of i.kids) {
+				if (!existingIds.has(id)) {
+					missingIds.add(id);
+				}
+			}
+		}
+	}
+	return [...missingIds.values()];
 }
 
-async function fetchCommentsInbackground(item:ItemWithComments){
-  const missingCommentIds = getMissingCommentIds(item);
-  for(const id of missingCommentIds){
-    fetchItemInBackground(id)
-  }
+async function fetchCommentsInbackground(item: ItemWithComments) {
+	const missingCommentIds = getMissingCommentIds(item);
+	for (const id of missingCommentIds) {
+		fetchItemInBackground(id);
+	}
 }
 
 export async function fetchItemWithComments(postId: number) {
-	const item = await fetchItem(postId) as ItemWithComments;
+	const item = (await fetchItem(postId)) as ItemWithComments;
 
-  const itemWithComments = db.getItemWithComments(item.id);
+	const itemWithComments = db.getItemWithComments(item.id);
 
-  if(itemWithComments && item.kids?.length && !itemWithComments?.comments?.length){
-    const comments = item.kids.slice(0, 10);
-    itemWithComments.comments = await Promise.all(comments.map(c => fetchItem(c) as Promise<ItemWithComments>))
-  }
+	if (itemWithComments && item.kids?.length && !itemWithComments?.comments?.length) {
+		const comments = item.kids.slice(0, 5);
+		itemWithComments.comments = await Promise.all(
+			comments.map((c) => fetchItem(c) as Promise<ItemWithComments>)
+		);
+	}
 
-  if(item.by){
-    fetchUser(item.by);
-  }
-
-
-  setTimeout(() => {
-    if(itemWithComments) fetchCommentsInbackground(itemWithComments)
-  }, 2000);
+	if (itemWithComments) {
+		setTimeout(() => fetchCommentsInbackground(itemWithComments), 2000);
+	}
 
 	return itemWithComments;
 }
-

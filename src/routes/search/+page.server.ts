@@ -9,13 +9,13 @@ type StoryResult = {
 };
 type UserResult = {
 	type: 'user';
-	results: (User & {about_snippet?:string, name_snippet?:string})[];
+	results: (User & { about_snippet?: string; name_snippet?: string })[];
 	total: number;
 	durationSearchMs: number;
 };
 type CommentResult = {
 	type: 'comment';
-	results: (Item & {text_snippet?:string})[];
+	results: (Item & { text_snippet?: string })[];
 	total: number;
 	durationSearchMs: number;
 };
@@ -37,7 +37,7 @@ export async function load({ url }: { url: URL }): Promise<SearchResult> {
 				query,
 				searchInBody,
 				total: 0,
-				durationSearchMs: 0,
+				durationSearchMs: 0
 			};
 		}
 		if (searchType === 'comment') {
@@ -47,7 +47,7 @@ export async function load({ url }: { url: URL }): Promise<SearchResult> {
 				query,
 				searchInBody,
 				total: 0,
-				durationSearchMs: 0,
+				durationSearchMs: 0
 			};
 		}
 		return {
@@ -56,7 +56,7 @@ export async function load({ url }: { url: URL }): Promise<SearchResult> {
 			query,
 			searchInBody,
 			total: 0,
-			durationSearchMs: 0,
+			durationSearchMs: 0
 		};
 	}
 
@@ -71,7 +71,7 @@ export async function load({ url }: { url: URL }): Promise<SearchResult> {
 	}
 
 	if (searchType === 'comment') {
-		const comments = await db.searchItems(query, true, "comment");
+		const comments = await db.searchItems(query, true, 'comment');
 		return {
 			type: 'comment',
 			query,

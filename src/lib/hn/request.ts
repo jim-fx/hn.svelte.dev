@@ -2,7 +2,7 @@ import * as db from '$lib/db';
 import { HN_BASE_URL } from './constants';
 import { fetch } from './queue';
 
-export async function request<T = unknown>(path: string, priority:"high"|"low" = "high") {
+export async function request<T = unknown>(path: string, priority: 'high' | 'low' = 'high') {
 	const response = await fetch<T>(`${HN_BASE_URL}${path}`, priority);
 
 	db.storeRequest({

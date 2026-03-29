@@ -1,0 +1,3 @@
+ALTER TABLE items 
+ADD COLUMN top_position INTEGER NOT NULL DEFAULT -1;
+

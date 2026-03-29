@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { LayerCake, Svg } from 'layercake';
-  import { codeToHtml,createHighlighterCoreSync, createJavaScriptRegexEngine } from 'shiki'
-  import vitesseDark from 'shiki/themes/vitesse-dark.mjs';
-  import sql from "shiki/langs/sql.mjs"
+	import { createHighlighterCoreSync, createJavaScriptRegexEngine } from 'shiki';
+	import vitesseDark from 'shiki/themes/vitesse-dark.mjs';
+	import sql from 'shiki/langs/sql.mjs';
 	import { scaleBand } from 'd3-scale';
 	import Bar from '$lib/charts/Bar.svelte';
 	import Pie from '$lib/charts/Pie.svelte';
@@ -10,20 +10,25 @@
 	import AxisX from '$lib/charts/AxisX.svelte';
 	import AxisY from '$lib/charts/AxisY.svelte';
 	import Box from '$lib/charts/Box.svelte';
+	import Multiline from '$lib/charts/Multiline.svelte';
 
 	const { data } = $props();
-		const stats = $derived(data?.db);
+	const stats = $derived(data?.db);
 
 	function formatNumber(n: number) {
 		return n?.toLocaleString() ?? '';
 	}
 
-  const shiki = createHighlighterCoreSync({
-    langs: [sql],
-    themes: [vitesseDark],
-    engine: createJavaScriptRegexEngine()
-  })
+  function formatTime(n: number){
+    const d = new Date(n);
+    return d.getHours()+":"+d.getMinutes()
+  }
 
+	const shiki = createHighlighterCoreSync({
+		langs: [sql],
+		themes: [vitesseDark],
+		engine: createJavaScriptRegexEngine()
+	});
 
 	function formatAge(ms: number | null) {
 		if (!ms) return 'N/A';
@@ -47,12 +52,19 @@
 	const storiesOverTime = stats.stories_over_time.map((d) => ({ x: d.date, y: d.cumulative }));
 	const commentsOverTime = stats.comments_over_time.map((d) => ({ x: d.date, y: d.cumulative }));
 	const usersOverTime = stats.users_over_time.map((d) => ({ x: d.date, y: d.cumulative }));
+
+  const flatQueue = data.queue
+    .map(d => [{x:d.time, y:d.high}, {x:d.time,y:d.low}])
+    .flat();
+  const queueOverTime = {
+    low : data.queue.map((d) => ({ x: d.time, y: d.low })),
+    high:  data.queue.map((d) => ({ x: d.time, y: d.high }))
+  }
 </script>
 
 <svelte:head>
 	<title>Cache Dashboard</title>
 </svelte:head>
-
 
 {@html `<script>console.log(${JSON.stringify(data)})</script>`}
 
@@ -63,8 +75,12 @@
 		<h2>Main Database (hn.sqlite)</h2>
 		<div class="stats-grid">
 			<div class="stat-card">
-				<div class="stat-value">{formatNumber(stats.total_items)}</div>
-				<div class="stat-label">Total Items</div>
+				<div class="stat-value">{formatNumber(stats.total_stories)}</div>
+				<div class="stat-label">Total Stories</div>
+			</div>
+			<div class="stat-card">
+				<div class="stat-value">{formatNumber(stats.total_comments)}</div>
+				<div class="stat-label">Total Comments</div>
 			</div>
 			<div class="stat-card">
 				<div class="stat-value">{formatNumber(stats.total_users)}</div>
@@ -73,10 +89,6 @@
 			<div class="stat-card">
 				<div class="stat-value">{data.size}</div>
 				<div class="stat-label">Database Size</div>
-			</div>
-			<div class="stat-card small">
-				<div class="stat-value">{formatNumber(stats.page_count)}</div>
-				<div class="stat-label">Total Pages</div>
 			</div>
 			<div class="stat-card">
 				<div class="stat-value">{formatNumber(stats.raw_cache_stats.count)}</div>
@@ -146,7 +158,7 @@
 
 			<div class="chart-container">
 				<LayerCake
-					ssr={true}
+					ssr
 					data={lineData}
 					x="x"
 					y="y"
@@ -170,7 +182,7 @@
 
 			<div class="chart-container">
 				<LayerCake
-					ssr={true}
+					ssr
 					data={storiesOverTime}
 					x="x"
 					y="y"
@@ -194,7 +206,7 @@
 
 			<div class="chart-container">
 				<LayerCake
-					ssr={true}
+					ssr
 					data={commentsOverTime}
 					x="x"
 					y="y"
@@ -218,7 +230,7 @@
 
 			<div class="chart-container">
 				<LayerCake
-					ssr={true}
+					ssr
 					data={usersOverTime}
 					x="x"
 					y="y"
@@ -232,6 +244,29 @@
 						<AxisX ticks={8} />
 
 						<Line />
+					</Svg>
+				</LayerCake>
+			</div>
+		</section>
+
+		<section class="chart-section full-width">
+			<h2>Queue Size</h2>
+
+			<div class="chart-container">
+				<LayerCake
+					ssr
+					data={queueOverTime}
+          flatData={flatQueue}
+					x="x"
+					y="y"
+					height={200}
+					width={600}
+					padding={{ top: 10, right: -30, bottom: -30, left: 50 }}
+				>
+					<Svg>
+						<AxisY ticks={5} format={(d) => formatNumber(d)} />
+						<AxisX ticks={8} format={(d) => formatTime(d)} />
+						<Multiline />
 					</Svg>
 				</LayerCake>
 			</div>
@@ -283,6 +318,31 @@
 			</div>
 		</section>
 
+    <section class="chart-section full-width">
+			<h2>Top 20 Searches</h2>
+      <div class="item-list">
+				{#each stats.top_searches as search (search.text)}
+					<div class="item-row">
+						<span class="rank">{search.count}x</span>
+						<span>{search.query}</span>
+						<span class="score">{search.avg_duration.toFixed(0)}ms</span>
+					</div>
+				{/each}
+			</div>
+    </section>
+
+    <section class="chart-section full-width">
+			<h2>Slowest Searches</h2>
+      <div class="item-list">
+				{#each stats.slowest_searches as search (search.text)}
+					<div class="item-row">
+            <span class="score">{search.duration.toFixed(0)}ms</span>
+						<span>{search.query}</span>
+					</div>
+				{/each}
+			</div>
+    </section>
+
 		<section class="chart-section full-width">
 			<h2>Most Common Tokens (Top 20)</h2>
 			{#if stats.common_tokens.length > 0}
@@ -304,23 +364,23 @@
 			<h2>Statistics Database (statistics.sqlite)</h2>
 			<div class="stats-grid" style="margin-bottom: 0px">
 				<div class="stat-card">
-					<div class="stat-value">{formatNumber(stats.request_stats.total_requests)}</div>
+					<div class="stat-value">{formatNumber(stats.requests.total_requests)}</div>
 					<div class="stat-label">Total Requests</div>
 				</div>
 				<div class="stat-card">
-					<div class="stat-value">{stats.request_stats.min_duration}ms</div>
+					<div class="stat-value">{stats.requests.min.duration}ms</div>
 					<div class="stat-label">Min Duration</div>
 				</div>
 				<div class="stat-card">
-					<div class="stat-value">{stats.request_stats.avg_duration.toFixed(0)}ms</div>
+					<div class="stat-value">{stats.requests.avg_duration.toFixed(0)}ms</div>
 					<div class="stat-label">Avg Duration</div>
 				</div>
 				<div class="stat-card">
-					<div class="stat-value">{stats.request_stats.p95_duration}ms</div>
+					<div class="stat-value">{stats.requests.p95_duration}ms</div>
 					<div class="stat-label">P95 Duration</div>
 				</div>
 				<div class="stat-card">
-					<div class="stat-value">{stats.request_stats.max_duration}ms</div>
+					<div class="stat-value">{stats.requests.max.duration}ms</div>
 					<div class="stat-label">Max Duration</div>
 				</div>
 				<div class="stat-card">
@@ -377,12 +437,14 @@
 			{#if stats.query_grouped.length > 0}
 				<div class="query-list">
 					{#each stats.query_grouped as query, i (i)}
-            <div class="query-header">
-              <span class="count">{formatNumber(query.count)} Count</span>
-              <span class="duration">{query.avg_duration.toFixed(0)}ms avg</span>
-            </div>
+						<div class="query-header">
+							<span class="count">{formatNumber(query.count)} Count</span>
+							<span class="duration">{query.avg_duration.toFixed(0)}ms avg</span>
+						</div>
 						<div class="query-row">
-              <span class="sql">{@html shiki.codeToHtml(query.sql, {lang: "sql", theme:"vitesse-dark"})}</span>
+							<span class="sql"
+								>{@html shiki.codeToHtml(query.sql, { lang: 'sql', theme: 'vitesse-dark' })}</span
+							>
 						</div>
 					{/each}
 				</div>
@@ -396,11 +458,13 @@
 			{#if stats.slowest_queries.length > 0}
 				<div class="query-list">
 					{#each stats.slowest_queries as query, i (i)}
-            <div class="query-header">
-              <span class="duration">{Math.floor(query.duration * 10) / 10}ms</span>
-            </div>
+						<div class="query-header">
+							<span class="duration">{Math.floor(query.duration * 10) / 10}ms</span>
+						</div>
 						<div class="query-row">
-              <span class="sql">{@html shiki.codeToHtml(query.sql, {lang: "sql", theme:"vitesse-dark"})}</span>
+							<span class="sql"
+								>{@html shiki.codeToHtml(query.sql, { lang: 'sql', theme: 'vitesse-dark' })}</span
+							>
 						</div>
 					{/each}
 				</div>
@@ -453,14 +517,6 @@
 	.stat-label {
 		color: var(--fg-light);
 		font-size: 0.875rem;
-	}
-
-	.stat-card.small {
-		padding: 1rem;
-	}
-
-	.stat-card.small .stat-value {
-		font-size: 1.5rem;
 	}
 
 	.charts-grid {
@@ -710,27 +766,37 @@
 		word-break: break-all;
 	}
 
-  .sql > :global(pre){
-    background-color: transparent !important;
-    margin-block: 0 !important;
+  .sql {
+    overflow: hidden;
   }
 
-  .query-header > * {
-    border-left: solid 2px var(--fg-lighter); 
-    padding-left: 0.5rem;
-  }
+	.sql > :global(pre) {
+		background-color: transparent !important;
+		margin-block: 0 !important;
+	}
 
-  .query-header > *:first-child {
-    border-left: none;
-    padding-left: 0;
-  }
+	.query-header > * {
+		border-left: solid 2px var(--fg-lighter);
+		padding-left: 0.5rem;
+	}
 
-	.duration,.count {
+	.query-header > *:first-child {
+		border-left: none;
+		padding-left: 0;
+	}
+
+	.duration,
+	.count {
 		font-family: monospace;
 		font-size: 0.75rem;
 		color: var(--fg-light);
 		white-space: nowrap;
 	}
+
+  :global(.shiki){
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 
 	@media (max-width: 500px) {
 		.charts-grid {

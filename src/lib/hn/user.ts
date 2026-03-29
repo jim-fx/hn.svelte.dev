@@ -6,10 +6,10 @@ import { isStale } from './utils';
 
 const logger = createLogger('hn:user');
 
-async function fetchUserInBackground(username: string) {
+export async function fetchUserInBackground(username: string) {
 	const url = `/user/${username}.json`;
 	try {
-		const fresh = await request<User>(url,"low");
+		const fresh = await request<User>(url, 'low');
 		db.storeUser(fresh);
 	} catch (err) {
 		logger.warn(`background refresh user ${username} failed`, { error: err });

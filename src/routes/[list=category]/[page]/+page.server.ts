@@ -22,8 +22,8 @@ export async function load({ params, setHeaders, depends }) {
 	// Using a custom key that includes the list and page
 	depends(`hn:list:${list}:${page}`);
 
-  return {
-    list,
-    ...(await hn.fetchList(list, page))
-  };
+	return {
+		list,
+		...(await hn.fetchList(list, page))
+	};
 }

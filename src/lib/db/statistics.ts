@@ -1,6 +1,6 @@
 import { IS_COMPRESSED } from './constants';
 import { db } from './db';
-import {stat} from "node:fs/promises"
+import { stat } from 'node:fs/promises';
 
 type DbRequest = {
 	url: string;
@@ -10,7 +10,7 @@ type DbRequest = {
 };
 
 export function storeRequest(request: DbRequest) {
-	return db.run("insert_request").run(request);
+	return db.run('insert_request').run(request);
 }
 
 type DbQuery = {
@@ -19,18 +19,18 @@ type DbQuery = {
 };
 
 export function storeQuery(query: DbQuery) {
-	return db.run("insert_query").run(query);
+	return db.run('insert_query').run(query);
 }
 
 type Search = {
-  query: string;
-  duration: number;
-  count: number;
-  type: string;
-}
+	query: string;
+	duration: number;
+	count: number;
+	type: string;
+};
 
-export function storeSearch(search: Search){
-  return db.run("insert_search_statistic").run(search);
+export function storeSearch(search: Search) {
+	return db.run('insert_search_statistic').run(search);
 }
 
 function formatBytes(bytes: number): string {
@@ -40,29 +40,29 @@ function formatBytes(bytes: number): string {
 	return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
-async function getSize(){
-  try {
-    const path = db.path.startsWith("file:") 
-      ? new URL(db.path).pathname
-      : db.path
-    const stats = await stat(path);
-    return formatBytes(stats.size);
-  } catch{
-    return null
-  }
+async function getSize() {
+	try {
+		const path = db.path.startsWith('file:') ? new URL(db.path).pathname : db.path;
+		const stats = await stat(path);
+		return formatBytes(stats.size);
+	} catch {
+		return null;
+	}
 }
 
 export async function getStatistics() {
-	const { data } = db
-    .run("get_statistics")
-    .get();
+	const { data } = db.run('get_statistics').get();
 
-  const vfs_list = db.run('PRAGMA vfs_list').all().map(r => r.vfs).join(', ');
+	const vfs_list = db
+		.run('PRAGMA vfs_list')
+		.all()
+		.map((r) => r.vfs)
+		.join(', ');
 
-  return {
-    vfs_list,
-    is_compressed: IS_COMPRESSED,
-    size: await getSize(),
-    db: JSON.parse(data as string)
-  }
+	return {
+		vfs_list,
+		is_compressed: IS_COMPRESSED,
+		size: await getSize(),
+		db: JSON.parse(data as string)
+	};
 }

@@ -1,15 +1,15 @@
-import { dev } from "$app/environment";
-import { Worker } from "node:worker_threads";
-import {existsSync} from "fs";
-function getWorker(): Worker{
-  try {
-    const u = new URL(dev ? "./queue_backend.ts":"./queue_backend.js", import.meta.url);
-    if(existsSync(u)){
-      return new Worker(u);
-    }
-  }  catch { }
-  console.log("Failed to create worker")
-  return {on: () => undefined} as unknown as Worker;
+import { dev } from '$app/environment';
+import { Worker } from 'node:worker_threads';
+import { existsSync } from 'fs';
+function getWorker(): Worker {
+	try {
+		const u = new URL(dev ? './queue_backend.ts' : './queue_backend.js', import.meta.url);
+		if (existsSync(u)) {
+			return new Worker(u);
+		}
+	} catch {}
+	console.log('Failed to create worker');
+	return { on: () => undefined } as unknown as Worker;
 }
 
 const worker = getWorker();
@@ -34,9 +34,18 @@ type FetchResult<T> =
 
 const pending = new Map<string, { resolve: (v: any) => void }>();
 
+let lastMeta = Date.now();
+export const states:{low:number,high:number, time:number}[] = [];
+
 worker.on('message', (msg) => {
 	const entry = pending.get(msg.url);
 	if (!entry) return;
+  const meta = msg.__meta;
+  delete msg.__meta;
+  if(lastMeta + 5000 < Date.now()){
+    states.push({...meta, time:Date.now()});
+    lastMeta = Date.now();
+  }
 	pending.delete(msg.url);
 	entry.resolve(msg);
 });

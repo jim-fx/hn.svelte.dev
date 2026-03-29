@@ -20,7 +20,8 @@ function serialise(item: Item): Record<string, SQLInputValue> {
 		kids: item.kids ? JSON.stringify(item.kids) : null,
 		parts: item.parts ? JSON.stringify(item.parts) : null,
 		cached_at: Date.now(),
-		first_cached_at: Date.now()
+		top_position: item.top_position ?? -1,
+		first_cached_at: item.first_cached_at?.getTime() ?? Date.now()
 	};
 }
 
@@ -44,21 +45,23 @@ function deserialise(row: Record<string, SQLOutputValue | undefined>) {
 	if (row.deleted) item.deleted = true;
 	if (row.kids != null) item.kids = JSON.parse(row.kids as string);
 	if (row.parts != null) item.parts = JSON.parse(row.parts as string);
+	if (row.top_position != null) item.top_position = row.top_position as number;
+	if (row.first_cached_at != null) item.first_cached_at = new Date(row.first_cached_at as number);
 
 	return item as Item;
 }
 export function getItem(id: number) {
-	const row = db.run("select_item").get({ id });
+	const row = db.run('select_item').get({ id });
 	return row ? deserialise(row) : undefined;
 }
 
-export function storeItem(item: Item) {
+export function upsertItem(item: Item) {
 	if (!item) return;
-	return db.run("upsert_item").run(serialise(item));
+	return db.run('upsert_item').run(serialise(item));
 }
 
 export function getItemWithComments(id: number) {
-	const rows = db.run("select_item_with_comments").all({ id });
+	const rows = db.run('select_item_with_comments').all({ id });
 
 	if (!rows || rows.length === 0) return undefined;
 
@@ -90,7 +93,7 @@ export function getItemWithComments(id: number) {
 }
 
 export function getItemsWithComments(ids: number[]) {
-	const rows = db.run("select_items_with_comments").all({ ids: JSON.stringify(ids) });
+	const rows = db.run('select_items_with_comments').all({ ids: JSON.stringify(ids) });
 
 	const items = rows.map(deserialise);
 

@@ -1,7 +1,7 @@
 import type { SQLInputValue } from 'node:sqlite';
 import { db } from './db';
 
-export type RawRow = ReturnType<typeof deserializeRow>
+export type RawRow = ReturnType<typeof deserializeRow>;
 function deserializeRow(row: Record<string, SQLInputValue>) {
 	return {
 		path: row.path as string,
@@ -11,13 +11,9 @@ function deserializeRow(row: Record<string, SQLInputValue>) {
 }
 
 export function getRawCache(path: string) {
-	return db
-    .run<RawRow>("select_raw", { deserialize: deserializeRow })
-    .get({ path });
+	return db.run<RawRow>('select_raw', { deserialize: deserializeRow }).get({ path });
 }
 
 export function storeRawCache(path: string, data: unknown) {
-	return db
-		.run("upsert_raw")
-		.run({ path, data: JSON.stringify(data), cached_at: Date.now() });
+	return db.run('upsert_raw').run({ path, data: JSON.stringify(data), cached_at: Date.now() });
 }

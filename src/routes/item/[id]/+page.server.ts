@@ -1,6 +1,6 @@
 import * as hn from '$lib/hn';
 
-export async function load({ params, setHeaders, depends }) {
+export async function load({ params, setHeaders }) {
 	const id = params.id;
 
 	// Cache item page for 5 minutes (items don't change often)
@@ -13,7 +13,7 @@ export async function load({ params, setHeaders, depends }) {
 	});
 
 	// Track dependency for cache invalidation
-	depends(`hn:item:${id}`);
+	// depends(`hn:item:${id}`);
 
-  return hn.fetchItemWithComments(+id);
+	return hn.fetchItemWithComments(+id);
 }

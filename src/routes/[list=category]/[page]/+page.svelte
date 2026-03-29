@@ -12,6 +12,8 @@
 	<meta name="description" content="Latest Hacker News stories in the {data.list} category" />
 </svelte:head>
 
+{@html `<script>console.log(${JSON.stringify(data.items)})</script>`}
+
 {#each data.items as item, i}
 	{#if item}
 		<ItemSummary {item} index={start + i} />

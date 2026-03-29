@@ -1,16 +1,17 @@
 SELECT json_object(
   -- Table schemas (what .schema returns)
-  'table_schemas', (
-    SELECT group_concat(sql, '
-')
-    FROM sqlite_master
-    WHERE sql IS NOT NULL
-    ORDER BY type, name
-  ),
+  -- 'table_schemas', (
+  -- SELECT group_concat(sql, '')
+  --  FROM sqlite_master
+  --  WHERE sql IS NOT NULL
+  --  ORDER BY type, name
+  --),
 
   -- Total counts
   'total_items', (SELECT COUNT(*) FROM items),
   'total_users', (SELECT COUNT(*) FROM users),
+  'total_stories', (SELECT COUNT(*) FROM items WHERE type = 'story'),
+  'total_comments', (SELECT COUNT(*) FROM items WHERE type = 'comment'),
 
   -- Metadata
   'page_count', (SELECT page_count FROM pragma_page_count()),
@@ -157,20 +158,71 @@ SELECT json_object(
     )
   ),
 
+  'top_searches', (
+    SELECT json_group_array(
+      json_object('query', query, 'count', cnt, 'avg_duration', avg_duration)
+    )
+    FROM (
+      SELECT query, COUNT(*) AS cnt, AVG(duration) AS avg_duration
+      FROM statistics.searches
+      GROUP BY query
+      ORDER BY cnt DESC
+    )
+  ),
+
+  'slowest_searches', (
+    SELECT json_group_array(
+      json_object('query', query, 'duration', duration)
+    )
+    FROM (
+      SELECT query, duration
+      FROM statistics.searches
+      ORDER BY duration DESC
+      LIMIT 10
+    )
+  ),
+
   -- Request stats
-  'request_stats', (
+  'requests', (
+    WITH min_req AS (
+      SELECT *
+      FROM statistics.requests
+      ORDER BY duration ASC
+      LIMIT 1
+    ),
+    max_req AS (
+      SELECT *
+      FROM statistics.requests
+      ORDER BY duration DESC
+      LIMIT 1
+    )
     SELECT json_object(
       'total_requests', (SELECT COUNT(*) FROM statistics.requests),
       'avg_duration', (SELECT AVG(duration) FROM statistics.requests),
-      'min_duration', (SELECT MIN(duration) FROM statistics.requests),
-      'max_duration', (SELECT MAX(duration) FROM statistics.requests),
+      'min', json_object(
+        'url', min_req.url,
+        'duration', min_req.duration,
+        'status', min_req.status,
+        'size', min_req.responseSize
+      ),
+      'max', json_object(
+        'url', max_req.url,
+        'duration', max_req.duration,
+        'status', max_req.status,
+        'size', max_req.responseSize
+      ),
       'p95_duration', (
+        WITH ranked AS (
+        SELECT duration,
+                ROW_NUMBER() OVER (ORDER BY duration) AS rn,
+                COUNT(*) OVER () AS cnt
+          FROM statistics.requests
+        )
         SELECT duration
-        FROM statistics.requests
-        ORDER BY duration DESC
-        LIMIT 1 OFFSET 5
+        FROM ranked
+        WHERE rn = (cnt * 95 + 99) / 100
       )
-    )
+    ) FROM min_req, max_req
   ),
 
   'request_status', (

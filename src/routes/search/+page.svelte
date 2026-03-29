@@ -5,9 +5,9 @@
 	import { timeToReadable } from '$lib/utils';
 
 	const { data } = $props();
-  
+
 	// svelte-ignore state_referenced_locally
-  let query: string = $state(data.query ?? '');
+	let query: string = $state(data.query ?? '');
 	// svelte-ignore state_referenced_locally
 	let searchType: string = $state(data.type ?? 'story');
 	// svelte-ignore state_referenced_locally
@@ -54,14 +54,14 @@
 </div>
 
 {#if data.durationSearchMs}
-  <div class="search-stats">
-    <span>
-      search {data.durationSearchMs?.toFixed(0) }<i>ms</i>
-    </span>
-    <span>
-      {data.results.length}/{data.total} <i>items</i>
-    </span>
-  </div>
+	<div class="search-stats">
+		<span>
+			search {data.durationSearchMs?.toFixed(0)}<i>ms</i>
+		</span>
+		<span>
+			{data.results.length}/{data.total} <i>items</i>
+		</span>
+	</div>
 {/if}
 
 {#if data.type === 'user'}
@@ -152,11 +152,11 @@
 		align-items: center;
 		gap: 0.5em;
 		color: var(--fg-light);
-    padding: 1em;
-    background-color: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 0.5em;
-    font-size: 10px;
+		padding: 1em;
+		background-color: var(--bg);
+		border: 1px solid var(--border);
+		border-radius: 0.5em;
+		font-size: 10px;
 	}
 	article {
 		position: relative;
@@ -218,15 +218,15 @@
 		line-height: 1;
 	}
 
-  .search-stats {
-      display: flex;
-      gap: 10px;
-    }
+	.search-stats {
+		display: flex;
+		gap: 10px;
+	}
 
-  .search-stats > span {
-      background-color: var(--fg-lighter);
-      font-size: 10px;
-      padding: 2px 4px;
-      border-radius: 5px;
-  }
+	.search-stats > span {
+		background-color: var(--fg-lighter);
+		font-size: 10px;
+		padding: 2px 4px;
+		border-radius: 5px;
+	}
 </style>

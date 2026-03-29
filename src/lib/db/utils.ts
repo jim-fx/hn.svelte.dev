@@ -9,6 +9,7 @@ import { join, resolve } from 'path';
 import { createLogger } from '$lib/logger';
 import { DATA_DIR, IS_COMPRESSED, ZSTD_PATH } from './constants';
 import sqlStatements from './statements';
+import { pathToFileURL } from 'url';
 
 type RunOptions<T> = {
 	deserialize?: (input: Record<string, SQLInputValue>) => T;
@@ -63,6 +64,7 @@ export type ExtendedDatabase = DatabaseSync & {
 };
 
 type DatabaseOptions = {
+	readonly?: boolean;
 	queryCallback?: (queryStats: { sql: string; duration: number }) => void;
 };
 
@@ -77,13 +79,13 @@ export function openDatabase(
 		bootstrap.loadExtension(ZSTD_PATH);
 		bootstrap.close();
 	}
-	let dbPath = join(resolve(DATA_DIR), dbName);
-	if (IS_COMPRESSED) {
-		dbPath = `file:${dbPath}?vfs=zstd`;
-	}
+	let dbPath = pathToFileURL(join(resolve(DATA_DIR), dbName));
+	if (IS_COMPRESSED) dbPath.searchParams.set('vfs', 'zstd');
+	if (dbOpts?.readonly) dbPath.searchParams.set('mode', 'ro');
+
 	try {
 		const db = new DatabaseSync(dbPath) as ExtendedDatabase;
-		db.path = dbPath;
+		db.path = dbPath.pathname;
 
 		const preparedStatements: Record<string, StatementSync> = {};
 		function getStatement(sqlOrId: string) {
@@ -190,12 +192,12 @@ export function openDatabase(
 					db.execSafe(migrationSql);
 					db.run('insert_migration').run({
 						name: key,
-            sql: migrationSql,
+						sql: migrationSql,
 						run_at: Date.now()
 					});
 				} catch (e) {
 					logger.error('failed to run migration', { key, error: e });
-          throw e;
+					throw e;
 				}
 			}
 		};

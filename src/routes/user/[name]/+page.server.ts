@@ -17,5 +17,5 @@ export async function load({ params, setHeaders, depends }) {
 	// Track dependency for cache invalidation
 	depends(`hn:user:${name}`);
 
-  return hn.fetchUser(name);
+	return hn.fetchUser(name);
 }

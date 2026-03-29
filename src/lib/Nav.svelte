@@ -4,20 +4,20 @@
 </script>
 
 <nav>
-  <div>
-    <ul>
-      <li><a href="/top/1" class:selected={section === 'top'}>top</a></li>
-      <li><a href="/new/1" class:selected={section === 'new'}>new</a></li>
-      <li><a href="/show/1" class:selected={section === 'show'}>show</a></li>
-      <li><a href="/ask/1" class:selected={section === 'ask'}>ask</a></li>
+	<div>
+		<ul>
+			<li><a href="/top/1" class:selected={section === 'top'}>top</a></li>
+			<li><a href="/new/1" class:selected={section === 'new'}>new</a></li>
+			<li><a href="/show/1" class:selected={section === 'show'}>show</a></li>
+			<li><a href="/ask/1" class:selected={section === 'ask'}>ask</a></li>
 
-      <li><a href="/search" class:selected={section === 'search'}>search</a></li>
+			<li><a href="/search" class:selected={section === 'search'}>search</a></li>
 
-      <li class="dash">
-        <a href="/dash" class:selected={section === 'dash'}>dash</a>
-      </li>
-    </ul>
-  </div>
+			<li class="dash">
+				<a href="/dash" class:selected={section === 'dash'}>dash</a>
+			</li>
+		</ul>
+	</div>
 </nav>
 
 <style>
@@ -28,23 +28,23 @@
 	}
 
 	nav > div {
-    max-width: 56em;
-    margin: 0 auto;
+		max-width: 56em;
+		margin: 0 auto;
 	}
-  nav > div > ul {
-    padding-inline: 2em;
-  }
+	nav > div > ul {
+		padding-inline: 2em;
+	}
 
 	ul {
 		margin: 0;
 	}
 
-  ul > *:first-child > a {
-    padding-left: 0px;
-  }
-  ul > *:last-child > a {
-    padding-right: 0px;
-  }
+	ul > *:first-child > a {
+		padding-left: 0px;
+	}
+	ul > *:last-child > a {
+		padding-right: 0px;
+	}
 
 	ul::after {
 		content: '';
