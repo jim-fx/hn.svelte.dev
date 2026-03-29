@@ -197,7 +197,6 @@ export function openDatabase(
 					});
 				} catch (e) {
 					logger.error('failed to run migration', { key, error: e });
-					throw e;
 				}
 			}
 		};

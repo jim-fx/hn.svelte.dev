@@ -77,7 +77,6 @@ CREATE TABLE IF NOT EXISTS users (
   about       TEXT,
   submitted   TEXT NOT NULL,    -- JSON array of integers
   cached_at   INTEGER NOT NULL,  -- Unix timestamp (ms) of last upsert
-  first_cached_at INTEGER        -- Unix timestamp (ms) of first cache
 );
 
 -- User full text search
