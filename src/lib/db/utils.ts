@@ -73,7 +73,6 @@ export function openDatabase(
 	dbOpts?: DatabaseOptions
 ): ExtendedDatabase {
 	const logger = createLogger('db:' + dbName);
-	logger.info('opening database', { IS_COMPRESSED, ZSTD_PATH });
 	if (IS_COMPRESSED) {
 		const bootstrap = new DatabaseSync(':memory:', { allowExtension: true });
 		bootstrap.loadExtension(ZSTD_PATH);
@@ -82,6 +81,7 @@ export function openDatabase(
 	let dbPath = pathToFileURL(join(resolve(DATA_DIR), dbName));
 	if (IS_COMPRESSED) dbPath.searchParams.set('vfs', 'zstd');
 	if (dbOpts?.readonly) dbPath.searchParams.set('mode', 'ro');
+  logger.info('opening database', { IS_COMPRESSED, ZSTD_PATH, dbOpts, dbPath });
 
 	try {
 		const db = new DatabaseSync(dbPath) as ExtendedDatabase;
