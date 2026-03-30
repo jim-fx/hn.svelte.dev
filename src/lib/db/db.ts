@@ -22,6 +22,5 @@ db.execSafe(`ATTACH DATABASE '${statisticsDb.path}' AS statistics`);
 isSetup = true;
 
 const readOnlyDb = openDatabase('hn.sqlite', { readonly: true });
-readOnlyDb.execSafe(`ATTACH DATABASE '${statisticsDb.path}' AS statistics`);
 
 export { db, readOnlyDb };

@@ -113,6 +113,7 @@ export function openDatabase(
 					} catch (e) {
 						logger.error('failed to run statement.all', {
 							e,
+              dbName,
 							sql: statement.expandedSQL,
 							inputs: limitObjectStrings(inputs)
 						});
@@ -120,6 +121,7 @@ export function openDatabase(
 					} finally {
 						logger.debug('run statement', {
 							statementId,
+              dbName,
 							sql: statement.expandedSQL,
 							inputs: limitObjectStrings(inputs)
 						});
@@ -135,6 +137,7 @@ export function openDatabase(
 					} catch (e) {
 						logger.error('failed to run statement.get', {
 							e,
+              dbName,
 							sql: statement.expandedSQL,
 							inputs: limitObjectStrings(inputs)
 						});
@@ -153,6 +156,7 @@ export function openDatabase(
 					} catch (e) {
 						logger.error('failed to run statement.run', {
 							e,
+              dbName,
 							sql: statement.expandedSQL,
 							inputs: limitObjectStrings(inputs)
 						});
@@ -171,7 +175,7 @@ export function openDatabase(
 			try {
 				return db.prepare(statement);
 			} catch (error) {
-				logger.error(`Failed to prepare statement`, { statement, error });
+				logger.error(`Failed to prepare statement`, { dbName,statement, error });
 				throw error;
 			}
 		};
@@ -196,7 +200,7 @@ export function openDatabase(
 						run_at: Date.now()
 					});
 				} catch (e) {
-					logger.error('failed to run migration', { key, error: e });
+					logger.error('failed to run migration', { dbName, key, error: e });
 					throw e;
 				}
 			}
@@ -211,7 +215,7 @@ export function openDatabase(
 				logger.debug(`executed statement`, { dbName, statement });
 				return result;
 			} catch (error) {
-				logger.error(`Failed to execute statement`, { statement, sql, error });
+				logger.error(`Failed to execute statement`, { dbName, statement, sql, error });
 				throw error;
 			} finally {
 				dbOpts?.queryCallback?.({ sql: statement, duration: performance.now() - start });
