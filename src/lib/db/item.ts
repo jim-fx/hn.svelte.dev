@@ -2,7 +2,7 @@ import type { Item, ItemWithComments } from '$lib/hn/types';
 import type { SQLInputValue, SQLOutputValue } from 'node:sqlite';
 import { db } from './db';
 
-function serialise(item: Item): Record<string, SQLInputValue> {
+function serialize(item: Item): Record<string, SQLInputValue> {
 	return {
 		id: item.id,
 		type: item.type ?? null,
@@ -19,13 +19,13 @@ function serialise(item: Item): Record<string, SQLInputValue> {
 		deleted: item.deleted ? 1 : 0,
 		kids: item.kids ? JSON.stringify(item.kids) : null,
 		parts: item.parts ? JSON.stringify(item.parts) : null,
-		cached_at: Date.now(),
+		cached_at: item.cached_at?.getTime() ?? Date.now(),
 		top_position: item.top_position ?? -1,
 		first_cached_at: item.first_cached_at?.getTime() ?? Date.now()
 	};
 }
 
-function deserialise(row: Record<string, SQLOutputValue | undefined>) {
+function deserialize(row: Record<string, SQLOutputValue | undefined>) {
 	const item: Record<string, unknown> = {
 		id: row.id,
 		type: row.type,
@@ -51,21 +51,22 @@ function deserialise(row: Record<string, SQLOutputValue | undefined>) {
 	return item as Item;
 }
 export function getItem(id: number) {
-	const row = db.run('select_item').get({ id });
-	return row ? deserialise(row) : undefined;
+	return db
+    .run('select_item', { deserialize })
+    .get({ id });
 }
 
 export function upsertItem(item: Item) {
 	if (!item) return;
-	return db.run('upsert_item').run(serialise(item));
+  return db.run('upsert_item').run(serialize(item));
 }
 
 export function getItemWithComments(id: number) {
-	const rows = db.run('select_item_with_comments').all({ id });
+	const items = db
+    .run('select_item_with_comments', { deserialize })
+    .all({ id });
 
-	if (!rows || rows.length === 0) return undefined;
-
-	const items = rows.map(deserialise);
+	if (!items || items.length === 0) return undefined;
 
 	const map = new Map<number, Item & { comments?: Item[] }>();
 
@@ -95,7 +96,7 @@ export function getItemWithComments(id: number) {
 export function getItemsWithComments(ids: number[]) {
 	const rows = db.run('select_items_with_comments').all({ ids: JSON.stringify(ids) });
 
-	const items = rows.map(deserialise);
+	const items = rows.map(deserialize);
 
 	const byId = new Map<number, Item & { comments?: Item[] }>();
 	const roots = new Map<number, ItemWithComments>();

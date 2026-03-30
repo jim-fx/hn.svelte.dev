@@ -1,7 +1,19 @@
 <script lang="ts">
 	import Comment from '$lib/Comment.svelte';
 	import { timeToReadable } from '$lib/utils';
+	import { ITEM_STALE_MS } from '$lib/hn/constants';
 	const { data: item } = $props();
+
+	const secondsUntilStale = $derived(() => {
+		if (!item.cached_at) return null;
+		const msUntilStale = ITEM_STALE_MS - (Date.now() - item.cached_at.getTime());
+		return Math.max(0, Math.floor(msUntilStale / 1000));
+	});
+
+	const lastRefreshedAgo = $derived(() => {
+		if (!item.cached_at) return null;
+		return timeToReadable(Math.floor(item.cached_at.getTime() / 1000));
+	});
 	function parseDomain(u?: string) {
 		if (!u) return '';
 		try {
@@ -30,6 +42,10 @@
 			{timeAgo}
 			{#if item.parent}
 				| <a href="/item/{item.parent}">parent</a>
+			{/if}
+			{#if lastRefreshedAgo() !== null}
+				| <span class="stale">cached {lastRefreshedAgo()}, refreshes in {secondsUntilStale()}s</span
+				>
 			{/if}
 		</p>
 
@@ -74,6 +90,11 @@
 		font-size: 0.8em;
 		font-weight: 300;
 		color: var(--fg-light);
+	}
+
+	.stale {
+		color: var(--fg-light);
+		opacity: 0.7;
 	}
 
 	.comments > :global(.comment):first-child {

@@ -15,13 +15,12 @@ export function isStale(item: CacheBase | Item | User): boolean {
 	if ('type' in item) {
 		if (item.type === 'comment') {
       const created = new Date(item.time ?? 0).getTime();
-			// Users are allowed to edit comments for 10 minutes
+			// Users are allowed to edit conmments for 10 minutes
 			// So if the item is older then ten minutes we refetch id only once
 			if (now > created + tenMinutes && cachedAt < created + tenMinutes) {
 				return true;
 			}
 		}
-    console.log({item, cacheAge,ITEM_STALE_MS});
 		return cacheAge > ITEM_STALE_MS;
 	}
 

@@ -5,6 +5,7 @@ import { createLogger } from '$lib/logger';
 import { request } from './request';
 import { isStale } from './utils';
 import { fetchItemWithComments } from './comments';
+import { fetchItemInBackground } from './item';
 
 const logger = createLogger('hn:list');
 
@@ -67,6 +68,12 @@ export async function fetchList(list: StoryType, page = 1, perPage = 30) {
 
 	const filtered = items.filter((item) => item && !item.dead && !item.deleted);
 	logger.info(`fetched list ${list} page ${page}: ${filtered.length} items`);
+
+  setTimeout(() => {
+    filtered.forEach(item => {
+      if(item && isStale(item)) fetchItemInBackground(item.id);
+    });
+  }, 2000)
 
 	return {
 		items: filtered,

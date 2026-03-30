@@ -1,8 +1,15 @@
-<script lang="ts">
-	import { LayerCake, Svg } from 'layercake';
+<script module lang="ts">
 	import { createHighlighterCoreSync, createJavaScriptRegexEngine } from 'shiki';
 	import vitesseDark from 'shiki/themes/vitesse-dark.mjs';
 	import sql from 'shiki/langs/sql.mjs';
+	const shiki = createHighlighterCoreSync({
+		langs: [sql],
+		themes: [vitesseDark],
+		engine: createJavaScriptRegexEngine()
+	});
+</script>
+<script lang="ts">
+	import { LayerCake, Svg } from 'layercake';
 	import { scaleBand } from 'd3-scale';
 	import Bar from '$lib/charts/Bar.svelte';
 	import Pie from '$lib/charts/Pie.svelte';
@@ -24,11 +31,6 @@
     return d.getHours()+":"+d.getMinutes()
   }
 
-	const shiki = createHighlighterCoreSync({
-		langs: [sql],
-		themes: [vitesseDark],
-		engine: createJavaScriptRegexEngine()
-	});
 
 	function formatAge(ms: number | null) {
 		if (!ms) return 'N/A';
@@ -325,6 +327,7 @@
 					<div class="item-row">
 						<span class="rank">{search.count}x</span>
 						<span>{search.query}</span>
+            <span class="score">{search.result_count} Results</span>
 						<span class="score">{search.avg_duration.toFixed(0)}ms</span>
 					</div>
 				{/each}
@@ -338,6 +341,7 @@
 					<div class="item-row">
             <span class="score">{search.duration.toFixed(0)}ms</span>
 						<span>{search.query}</span>
+            <span class="score">{search.result_count} Results</span>
 					</div>
 				{/each}
 			</div>
@@ -624,7 +628,7 @@
 
 	.item-row {
 		display: grid;
-		grid-template-columns: 2rem 1fr auto;
+		grid-template-columns: 2rem 1fr auto auto;
 		gap: 0.75rem;
 		align-items: start;
 		padding: 0.5rem;

@@ -283,10 +283,10 @@ SELECT json_object(
 
   'top_searches', (
     SELECT json_group_array(
-      json_object('query', query, 'count', cnt, 'avg_duration', avg_dur)
+      json_object('query', query, 'count', cnt, 'result_count', result_count, 'avg_duration', avg_dur)
     )
     FROM (
-      SELECT query, COUNT(*) AS cnt, AVG(duration) AS avg_dur
+      SELECT query, COUNT(*) AS cnt, result_count, AVG(duration) AS avg_dur
       FROM statistics.searches
       GROUP BY query
       ORDER BY cnt DESC
@@ -296,10 +296,10 @@ SELECT json_object(
 
   'slowest_searches', (
     SELECT json_group_array(
-      json_object('query', query, 'duration', duration)
+      json_object('query', query, 'duration', duration, 'result_count', result_count)
     )
     FROM (
-      SELECT query, duration
+      SELECT query, duration, result_count
       FROM statistics.searches
       ORDER BY duration DESC
       LIMIT 10
