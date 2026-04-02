@@ -15,7 +15,7 @@
 
 	const lastRefreshedAgo = $derived(() => {
 		if (!item.cached_at) return null;
-		return formatDuration(Math.floor((Date.now() - item.cached_at.getTime()) / 1000)) + ' ago';
+		return formatDuration(Math.floor((Date.now() - item.cached_at.getTime()) / 1000), 1) + ' ago';
 	});
 	function parseDomain(u?: string) {
 		if (!u) return '';
@@ -27,7 +27,7 @@
 	}
 	const domain = $derived(parseDomain(item.url));
 	const timeAgo = $derived(
-		item.time ? formatDuration(Math.floor(Date.now() / 1000 - item.time)) + ' ago' : ''
+		item.time ? formatDuration(Math.floor(Date.now() / 1000 - item.time), 1) + ' ago' : ''
 	);
 </script>
 

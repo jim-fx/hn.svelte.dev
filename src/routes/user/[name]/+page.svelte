@@ -2,7 +2,7 @@
 	import { formatDuration } from '$lib/format';
 	const { data } = $props();
 	const createdAgo = $derived(
-		data.created ? formatDuration(Math.floor(Date.now() / 1000 - data.created)) + ' ago' : ''
+		data.created ? formatDuration(Math.floor(Date.now() / 1000 - data.created), 1) + ' ago' : ''
 	);
 </script>
 

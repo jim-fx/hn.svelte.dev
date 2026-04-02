@@ -109,7 +109,7 @@
 					<a href="/user/{item.by}">{item.by}</a>
 					|
 					{item.score} points |
-					{item.time ? formatDuration(Math.floor(Date.now() / 1000 - item.time)) + ' ago' : ''}
+					{item.time ? formatDuration(Math.floor(Date.now() / 1000 - item.time), 1) + ' ago' : ''}
 				</p>
 				<span class="index">{i + 1}</span>
 			</article>

@@ -4,7 +4,7 @@
 	import CommentEl from './Comment.svelte';
 	const { comment } = $props<{ comment: ItemWithComments }>();
 	const timeAgo = $derived(
-		comment.time ? formatDuration(Math.floor(Date.now() / 1000 - comment.time)) + ' ago' : ''
+		comment.time ? formatDuration(Math.floor(Date.now() / 1000 - comment.time), 1) + ' ago' : ''
 	);
 </script>
 

@@ -61,10 +61,7 @@ export async function fetchList(list: StoryType, page = 1, perPage = 30) {
 		}
 	}
 
-	const missingItems = await Promise.all(
-		missingIds.values().map((id) => fetchItemWithComments(id))
-	);
-	items.push(...missingItems);
+  missingIds.values().forEach((id) => fetchItemWithComments(id))
 
 	const filtered = items.filter((item) => item && !item.dead && !item.deleted);
 	logger.info(`fetched list ${list} page ${page}: ${filtered.length} items`);

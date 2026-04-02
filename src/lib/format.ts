@@ -15,17 +15,28 @@ export function formatAge(ms: number | null) {
 	return `${Math.floor(hours / 24)}d ago`;
 }
 
-export function formatDuration(seconds: number): string {
+export function formatDuration(seconds: number, parts = 2): string {
+	const parts_ = [];
 	if (seconds < 60) return `${Math.floor(seconds)}s`;
 	const mins = Math.floor(seconds / 60);
 	const secs = Math.floor(seconds % 60);
-	if (mins < 60) return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
-	const hours = Math.floor(mins / 60);
-	const minsRem = mins % 60;
-	if (hours < 24) return minsRem > 0 ? `${hours}h ${minsRem}m` : `${hours}h`;
-	const days = Math.floor(hours / 24);
-	const hoursRem = hours % 24;
-	return hoursRem > 0 ? `${days}d ${hoursRem}h` : `${days}d`;
+	if (mins < 60) {
+		parts_.push(`${mins}m`);
+		if (secs > 0 && parts > 1) parts_.push(`${secs}s`);
+	} else {
+		const hours = Math.floor(mins / 60);
+		const minsRem = mins % 60;
+		if (hours < 24) {
+			parts_.push(`${hours}h`);
+			if (minsRem > 0 && parts > 1) parts_.push(`${minsRem}m`);
+		} else {
+			const days = Math.floor(hours / 24);
+			const hoursRem = hours % 24;
+			parts_.push(`${days}d`);
+			if (hoursRem > 0 && parts > 1) parts_.push(`${hoursRem}h`);
+		}
+	}
+	return parts_.slice(0, parts).join(' ');
 }
 
 export function formatBytes(bytes: number): string {

@@ -10,7 +10,7 @@
 	} = $props<{ item: Item; index: number; showBodyPreview?: boolean }>();
 	const domain = $derived(item.url ? new URL(item.url)?.hostname : '');
 	const timeAgo = $derived(
-		item.time ? formatDuration(Math.floor(Date.now() / 1000 - item.time)) + ' ago' : ''
+		item.time ? formatDuration(Math.floor(Date.now() / 1000 - item.time), 1) + ' ago' : ''
 	);
 
 	const secondsUntilStale = $derived(() => {
