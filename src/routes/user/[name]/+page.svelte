@@ -1,7 +1,9 @@
 <script lang="ts">
-	import { timeToReadable } from '$lib/utils';
+	import { formatDuration } from '$lib/format';
 	const { data } = $props();
-	const createdAgo = $derived(data.created ? timeToReadable(data.created) : '');
+	const createdAgo = $derived(
+		data.created ? formatDuration(Math.floor(Date.now() / 1000 - data.created)) + ' ago' : ''
+	);
 </script>
 
 <svelte:head>

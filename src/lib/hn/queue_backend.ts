@@ -1,5 +1,8 @@
 import { parentPort } from 'node:worker_threads';
+
 export const HN_BASE_URL = 'https://hacker-news.firebaseio.com/v0';
+const MAX_CONCURRENT = 10;
+
 if (!parentPort) {
 	throw new Error('Must be run as worker');
 }
@@ -29,7 +32,6 @@ setInterval(() => {
 }, 1000);
 
 let active = 0;
-const MAX_CONCURRENT = 5;
 
 parentPort.on('message', (msg) => {
 	const queue = msg.priority === 'low' ? queues.low : queues.high;

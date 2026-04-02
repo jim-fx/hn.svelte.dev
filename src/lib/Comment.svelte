@@ -1,9 +1,11 @@
 <script lang="ts">
 	import type { ItemWithComments } from '$lib/hn';
-	import { timeToReadable } from '$lib/utils';
+	import { formatDuration } from '$lib/format';
 	import CommentEl from './Comment.svelte';
 	const { comment } = $props<{ comment: ItemWithComments }>();
-	const timeAgo = $derived(comment.time ? timeToReadable(comment.time) : '');
+	const timeAgo = $derived(
+		comment.time ? formatDuration(Math.floor(Date.now() / 1000 - comment.time)) + ' ago' : ''
+	);
 </script>
 
 {#if !comment.deleted}

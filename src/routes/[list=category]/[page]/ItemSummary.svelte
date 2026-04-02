@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Item } from '$lib/hn';
-	import { timeToReadable } from '$lib/utils';
+	import { formatDuration } from '$lib/format';
+	import { isStale, getItemStaleThreshold } from '$lib/hn/utils';
 
 	const {
 		item,
@@ -8,7 +9,18 @@
 		showBodyPreview = false
 	} = $props<{ item: Item; index: number; showBodyPreview?: boolean }>();
 	const domain = $derived(item.url ? new URL(item.url)?.hostname : '');
-	const timeAgo = $derived(item.time ? timeToReadable(item.time) : '');
+	const timeAgo = $derived(
+		item.time ? formatDuration(Math.floor(Date.now() / 1000 - item.time)) + ' ago' : ''
+	);
+
+	const secondsUntilStale = $derived(() => {
+		if (!item.cached_at) return null;
+		const stale = isStale(item);
+		if (stale) return 0;
+		const threshold = getItemStaleThreshold(item);
+		const msUntilStale = threshold - (Date.now() - item.cached_at.getTime());
+		return Math.max(0, Math.floor(msUntilStale / 1000));
+	});
 </script>
 
 <article>
@@ -41,6 +53,9 @@
 				{item.descendants}
 				{item.descentands === 1 ? 'comment' : 'comments'}
 			</a>
+			{#if secondsUntilStale() !== null}
+				<span class="stale"> · next refresh in {formatDuration(secondsUntilStale()!)}</span>
+			{/if}
 		</p>
 	{/if}
 
@@ -77,6 +92,11 @@
 		color: var(--fg-light);
 		margin: 0;
 		font-weight: 300;
+	}
+
+	.stale {
+		color: var(--fg-light);
+		opacity: 0.6;
 	}
 
 	small {

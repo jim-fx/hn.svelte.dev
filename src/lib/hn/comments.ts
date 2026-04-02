@@ -1,5 +1,4 @@
 import * as db from '$lib/db';
-import { ITEM_STALE_MS } from './constants';
 import { fetchItem, fetchItemInBackground } from './item';
 import type { ItemWithComments } from './types';
 

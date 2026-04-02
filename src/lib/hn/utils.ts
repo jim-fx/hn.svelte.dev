@@ -1,9 +1,32 @@
-import { ITEM_STALE_MS, LIST_STALE_MS, USER_STALE_MS } from './constants';
+import {
+	ITEM_STALE_INITIAL,
+	ITEM_STALE_MAX,
+	ITEM_STALE_RAMP_UP,
+	LIST_STALE_MS,
+	USER_STALE_MS
+} from './constants';
 import type { Item, User } from './types';
 
 type CacheBase = {
 	cached_at: Date;
 };
+
+export function getItemStaleThreshold(item: Item): number {
+	const created = item.time ? item.time * 1000 : item.cached_at.getTime();
+	const now = Date.now();
+	const age = now - created;
+
+	if (age < ITEM_STALE_RAMP_UP) {
+		return ITEM_STALE_INITIAL;
+	}
+
+	if (age > ITEM_STALE_MAX) {
+		return ITEM_STALE_MAX;
+	}
+
+	const progress = (age - ITEM_STALE_RAMP_UP) / (ITEM_STALE_MAX - ITEM_STALE_RAMP_UP);
+	return ITEM_STALE_INITIAL + progress * (ITEM_STALE_MAX - ITEM_STALE_INITIAL);
+}
 
 export function isStale(item: CacheBase | Item | User): boolean {
 	const now = Date.now();
@@ -14,14 +37,12 @@ export function isStale(item: CacheBase | Item | User): boolean {
 
 	if ('type' in item) {
 		if (item.type === 'comment') {
-      const created = new Date(item.time ?? 0).getTime();
-			// Users are allowed to edit conmments for 10 minutes
-			// So if the item is older then ten minutes we refetch id only once
+			const created = new Date(item.time ?? 0).getTime();
 			if (now > created + tenMinutes && cachedAt < created + tenMinutes) {
 				return true;
 			}
 		}
-		return cacheAge > ITEM_STALE_MS;
+		return cacheAge > getItemStaleThreshold(item);
 	}
 
 	if ('karma' in item) {

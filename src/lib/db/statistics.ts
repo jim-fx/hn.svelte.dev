@@ -1,6 +1,7 @@
 import { IS_COMPRESSED } from './constants';
 import { db } from './db';
 import { stat } from 'node:fs/promises';
+import { formatBytes } from '$lib/format';
 
 type DbRequest = {
 	url: string;
@@ -31,13 +32,6 @@ type Search = {
 
 export function storeSearch(search: Search) {
 	return db.run('insert_search_statistic').run(search);
-}
-
-function formatBytes(bytes: number): string {
-	if (bytes < 1024) return `${bytes} B`;
-	if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-	if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-	return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
 async function getSize() {

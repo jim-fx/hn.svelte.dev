@@ -81,7 +81,7 @@ export function openDatabase(
 	let dbPath = pathToFileURL(join(resolve(DATA_DIR), dbName));
 	if (IS_COMPRESSED) dbPath.searchParams.set('vfs', 'zstd');
 	if (dbOpts?.readonly) dbPath.searchParams.set('mode', 'ro');
-  logger.info('opening database', { IS_COMPRESSED, ZSTD_PATH, dbOpts, dbPath });
+	logger.info('opening database', { IS_COMPRESSED, ZSTD_PATH, dbOpts, dbPath });
 
 	try {
 		const db = new DatabaseSync(dbPath) as ExtendedDatabase;
@@ -113,7 +113,7 @@ export function openDatabase(
 					} catch (e) {
 						logger.error('failed to run statement.all', {
 							e,
-              dbName,
+							dbName,
 							sql: statement.expandedSQL,
 							inputs: limitObjectStrings(inputs)
 						});
@@ -121,7 +121,7 @@ export function openDatabase(
 					} finally {
 						logger.debug('run statement', {
 							statementId,
-              dbName,
+							dbName,
 							sql: statement.expandedSQL,
 							inputs: limitObjectStrings(inputs)
 						});
@@ -137,7 +137,7 @@ export function openDatabase(
 					} catch (e) {
 						logger.error('failed to run statement.get', {
 							e,
-              dbName,
+							dbName,
 							sql: statement.expandedSQL,
 							inputs: limitObjectStrings(inputs)
 						});
@@ -156,7 +156,7 @@ export function openDatabase(
 					} catch (e) {
 						logger.error('failed to run statement.run', {
 							e,
-              dbName,
+							dbName,
 							sql: statement.expandedSQL,
 							inputs: limitObjectStrings(inputs)
 						});
@@ -175,7 +175,7 @@ export function openDatabase(
 			try {
 				return db.prepare(statement);
 			} catch (error) {
-				logger.error(`Failed to prepare statement`, { dbName,statement, error });
+				logger.error(`Failed to prepare statement`, { dbName, statement, error });
 				throw error;
 			}
 		};
@@ -223,11 +223,19 @@ export function openDatabase(
 		};
 
 		if (IS_COMPRESSED) {
-			db.execSafe('PRAGMA journal_mode = DELETE');
-			db.execSafe('PRAGMA cache_size = -102400');
+			db.execSafe(`
+				PRAGMA journal_mode = DELETE;
+				PRAGMA cache_size = -102400;
+				PRAGMA temp_store = MEMORY;
+			`);
 		} else {
-			db.execSafe('PRAGMA journal_mode = WAL');
-			db.execSafe('PRAGMA synchronous  = NORMAL');
+			db.execSafe(`
+				PRAGMA journal_mode = WAL;
+				PRAGMA synchronous = NORMAL;
+				PRAGMA temp_store = MEMORY;
+				PRAGMA mmap_size = 268435456;
+				PRAGMA auto_vacuum = INCREMENTAL;
+			`);
 		}
 
 		return db;

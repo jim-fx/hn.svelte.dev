@@ -2,7 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import ItemSummary from '../[list=category]/[page]/ItemSummary.svelte';
-	import { timeToReadable } from '$lib/utils';
+	import { formatDuration } from '$lib/format';
 
 	const { data } = $props();
 
@@ -109,7 +109,7 @@
 					<a href="/user/{item.by}">{item.by}</a>
 					|
 					{item.score} points |
-					{item.time ? timeToReadable(item.time) : ''}
+					{item.time ? formatDuration(Math.floor(Date.now() / 1000 - item.time)) + ' ago' : ''}
 				</p>
 				<span class="index">{i + 1}</span>
 			</article>

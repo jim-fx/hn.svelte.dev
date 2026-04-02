@@ -32,27 +32,40 @@ type FetchResult<T> =
 	| { data: T; httpStatus: number; durationMs: number; sizeBytes: number; error?: undefined }
 	| { error: Error; httpStatus: number; durationMs: number; sizeBytes: number; data?: undefined };
 
-const pending = new Map<string, { resolve: (v: any) => void }>();
+const pending = new Map<string, { resolve: (v: any) => void; queuedAt: number }>();
 
 let lastMeta = Date.now();
-export const states:{low:number,high:number, time:number}[] = [];
+export const states: { low: number; high: number; time: number }[] = [];
 
 worker.on('message', (msg) => {
 	const entry = pending.get(msg.url);
 	if (!entry) return;
-  const meta = msg.__meta;
-  delete msg.__meta;
-  if(lastMeta + 5000 < Date.now()){
-    states.push({...meta, time:Date.now()});
-    lastMeta = Date.now();
-  }
+	const meta = msg.__meta;
+	delete msg.__meta;
+	if (lastMeta + 5000 < Date.now()) {
+		states.push({ ...meta, time: Date.now() });
+		lastMeta = Date.now();
+	}
 	pending.delete(msg.url);
 	entry.resolve(msg);
 });
 
+const DEDUP_WINDOW_MS = 100;
+
 export function fetch<T>(url: string, priority: 'high' | 'low' = 'high'): Promise<FetchResult<T>> {
+	const now = Date.now();
+	const existing = pending.get(url);
+
+	if (existing && now - existing.queuedAt < DEDUP_WINDOW_MS) {
+		return new Promise((resolve) => {
+			existing.resolve = (msg) => {
+				resolve(msg as FetchResult<T>);
+			};
+		});
+	}
+
 	return new Promise((resolve) => {
-		pending.set(url, { resolve });
+		pending.set(url, { resolve, queuedAt: now });
 		worker.postMessage({
 			type: 'fetch',
 			url,

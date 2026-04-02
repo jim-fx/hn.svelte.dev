@@ -8,6 +8,7 @@
 		engine: createJavaScriptRegexEngine()
 	});
 </script>
+
 <script lang="ts">
 	import { LayerCake, Svg } from 'layercake';
 	import { scaleBand } from 'd3-scale';
@@ -18,27 +19,10 @@
 	import AxisY from '$lib/charts/AxisY.svelte';
 	import Box from '$lib/charts/Box.svelte';
 	import Multiline from '$lib/charts/Multiline.svelte';
+	import { formatNumber, formatTime, formatAge } from '$lib/format';
 
 	const { data } = $props();
 	const stats = $derived(data?.db);
-
-	function formatNumber(n: number) {
-		return n?.toLocaleString() ?? '';
-	}
-
-  function formatTime(n: number){
-    const d = new Date(n);
-    return d.getHours()+":"+d.getMinutes()
-  }
-
-
-	function formatAge(ms: number | null) {
-		if (!ms) return 'N/A';
-		const hours = Math.floor((Date.now() - ms) / 3600000);
-		if (hours < 1) return 'Just now';
-		if (hours < 24) return `${hours}h ago`;
-		return `${Math.floor(hours / 24)}d ago`;
-	}
 
 	const pieData = stats?.items_by_type?.map((d) => ({ label: d.type, value: d.count })) ?? [];
 
@@ -55,13 +39,16 @@
 	const commentsOverTime = stats.comments_over_time.map((d) => ({ x: d.date, y: d.cumulative }));
 	const usersOverTime = stats.users_over_time.map((d) => ({ x: d.date, y: d.cumulative }));
 
-  const flatQueue = data.queue
-    .map(d => [{x:d.time, y:d.high}, {x:d.time,y:d.low}])
-    .flat();
-  const queueOverTime = {
-    low : data.queue.map((d) => ({ x: d.time, y: d.low })),
-    high:  data.queue.map((d) => ({ x: d.time, y: d.high }))
-  }
+	const flatQueue = data.queue
+		.map((d) => [
+			{ x: d.time, y: d.high },
+			{ x: d.time, y: d.low }
+		])
+		.flat();
+	const queueOverTime = {
+		low: data.queue.map((d) => ({ x: d.time, y: d.low })),
+		high: data.queue.map((d) => ({ x: d.time, y: d.high }))
+	};
 </script>
 
 <svelte:head>
@@ -258,7 +245,7 @@
 				<LayerCake
 					ssr
 					data={queueOverTime}
-          flatData={flatQueue}
+					flatData={flatQueue}
 					x="x"
 					y="y"
 					height={200}
@@ -320,32 +307,32 @@
 			</div>
 		</section>
 
-    <section class="chart-section full-width">
+		<section class="chart-section full-width">
 			<h2>Top 20 Searches</h2>
-      <div class="item-list">
+			<div class="item-list">
 				{#each stats.top_searches as search (search.text)}
 					<div class="item-row">
 						<span class="rank">{search.count}x</span>
 						<span>{search.query}</span>
-            <span class="score">{search.result_count} Results</span>
+						<span class="score">{search.result_count} Results</span>
 						<span class="score">{search.avg_duration.toFixed(0)}ms</span>
 					</div>
 				{/each}
 			</div>
-    </section>
+		</section>
 
-    <section class="chart-section full-width">
+		<section class="chart-section full-width">
 			<h2>Slowest Searches</h2>
-      <div class="item-list">
+			<div class="item-list">
 				{#each stats.slowest_searches as search (search.text)}
 					<div class="item-row">
-            <span class="score">{search.duration.toFixed(0)}ms</span>
+						<span class="score">{search.duration.toFixed(0)}ms</span>
 						<span>{search.query}</span>
-            <span class="score">{search.result_count} Results</span>
+						<span class="score">{search.result_count} Results</span>
 					</div>
 				{/each}
 			</div>
-    </section>
+		</section>
 
 		<section class="chart-section full-width">
 			<h2>Most Common Tokens (Top 20)</h2>
@@ -770,9 +757,9 @@
 		word-break: break-all;
 	}
 
-  .sql {
-    overflow: hidden;
-  }
+	.sql {
+		overflow: hidden;
+	}
 
 	.sql > :global(pre) {
 		background-color: transparent !important;
@@ -797,10 +784,10 @@
 		white-space: nowrap;
 	}
 
-  :global(.shiki){
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
+	:global(.shiki) {
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
 
 	@media (max-width: 500px) {
 		.charts-grid {
