@@ -80,12 +80,11 @@ export function openDatabase(
 	}
 	let dbPath = pathToFileURL(join(resolve(DATA_DIR), dbName));
 	if (IS_COMPRESSED) dbPath.searchParams.set('vfs', 'zstd');
-	if (dbOpts?.readonly) dbPath.searchParams.set('mode', 'ro');
 	logger.info('opening database', { IS_COMPRESSED, ZSTD_PATH, dbOpts, dbPath });
 
 	try {
 		const db = new DatabaseSync(dbPath, {
-      defensive: dbOpts?.readonly,
+			defensive: dbOpts?.readonly,
 			readOnly: dbOpts?.readonly
 		}) as ExtendedDatabase;
 		db.path = dbPath.pathname;
