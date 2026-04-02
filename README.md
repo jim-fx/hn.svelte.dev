@@ -1,42 +1,60 @@
-# sv
+# Hacker News SvelteKit Client
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+A SvelteKit app that fetches from the Hacker News Firebase API and caches everything in local SQLite databases for fast, offline-capable browsing.
 
-## Creating a project
+## Architecture
 
-If you're seeing this, you've probably already done this step. Congrats!
+### API Layer (`src/lib/hn/`)
 
-```sh
-# create a new project
-npx sv create my-app
-```
+| File               | Purpose                                                                                         |
+| ------------------ | ----------------------------------------------------------------------------------------------- |
+| `types.ts`         | TypeScript types: `Item`, `ItemWithComments`, `User`, `StoryType`                               |
+| `request.ts`       | Wraps worker fetch, records request statistics                                                  |
+| `queue.ts`         | Main thread: manages pending requests, tracks queue state for monitoring                        |
+| `queue_backend.ts` | Worker thread: fetches from HN API with concurrency limit = 5, two priority queues (high/low)   |
+| `item.ts`          | Fetch items, background refresh when stale, prefetch author                                     |
+| `comments.ts`      | Fetch items with nested comments, prefetch missing comment IDs in background                    |
+| `list.ts`          | Fetch story lists with pagination, update `top_position`, background refresh                    |
+| `user.ts`          | Fetch user profiles with background refresh                                                     |
+| `utils.ts`         | Staleness detection — different TTLs for items (10 min), users (1 hour), comments (edit window) |
 
-To recreate this project with the same configuration:
+### Database Layer (`src/lib/db/`)
 
-```sh
-# recreate this project
-pnpm dlx sv@0.12.8 create --template minimal --types ts --add prettier eslint --install pnpm hn.svelte.new
-```
+| File            | Purpose                                                                                             |
+| --------------- | --------------------------------------------------------------------------------------------------- |
+| `db.ts`         | Opens `hn.sqlite` + `statistics.sqlite`, runs migrations, attaches stats DB                         |
+| `utils.ts`      | Extended SQLite wrapper: prepared statements, migration runner, query callback for stats            |
+| `item.ts`       | Serialize/deserialize items, `upsertItem`, `getItem`, `getItemWithComments`, `getItemsWithComments` |
+| `user.ts`       | Serialize/deserialize users, `storeUser`, `getUser`                                                 |
+| `raw.ts`        | Raw API list caching (e.g., topstories.json)                                                        |
+| `statistics.ts` | Store request duration, query stats, search stats; provides `/statistics` endpoint                  |
+| `search.ts`     | Full-text search on items                                                                           |
+| `statements/`   | SQL definitions for all queries                                                                     |
+
+## Key Design Patterns
+
+1. **Worker thread** — All HTTP requests to HN API are handled by a worker thread with concurrent request limiting
+2. **Two priority queues** — High (user-initiated) vs low (background prefetch)
+3. **Staleness detection** — Background refresh triggers while serving cached data immediately
+4. **Query callbacks** — Track every DB operation for performance statistics
+5. **Compression support** — Optional ZSTD compression via config
 
 ## Developing
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
 ```sh
 npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
 ```
 
 ## Building
-
-To create a production version of your app:
 
 ```sh
 npm run build
 ```
 
-You can preview the production build with `npm run preview`.
+## Available Scripts
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+- `npm run dev` — Start development server
+- `npm run build` — Build for production (includes worker bundle)
+- `npm run preview` — Preview production build
+- `npm run check` — Type check with svelte-check
+- `npm run lint` — Run Prettier and ESLint
