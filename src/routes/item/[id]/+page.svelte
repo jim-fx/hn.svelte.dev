@@ -8,18 +8,26 @@
 	const changes = $derived(data.changes ?? []);
 
 	const titleHistory = $derived(
-		changes.filter((c) => c.fields.title).map((c) => ({ value: c.fields.title, at: c.changed_at }))
+		[...changes]
+			.reverse()
+			.filter((c) => c.fields.title != null)
+			.slice(0, 10)
+			.map((c) => ({ value: c.fields.title, at: c.changed_at }))
 	);
 
 	const scoreHistory = $derived(
-		changes
-			.filter((c) => c.fields.score !== undefined)
+		[...changes]
+			.reverse()
+			.filter((c) => c.fields.score != null)
+			.slice(0, 10)
 			.map((c) => ({ value: c.fields.score, at: c.changed_at }))
 	);
 
 	const positionHistory = $derived(
-		changes
-			.filter((c) => c.fields.top_position !== undefined)
+		[...changes]
+			.reverse()
+			.filter((c) => c.fields.top_position != null)
+			.slice(0, 10)
 			.map((c) => ({ value: c.fields.top_position, at: c.changed_at }))
 	);
 

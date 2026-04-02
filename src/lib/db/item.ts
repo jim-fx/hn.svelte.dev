@@ -3,7 +3,7 @@ import type { SQLInputValue, SQLOutputValue } from 'node:sqlite';
 import { db } from './db';
 
 function serialize(item: Item): Record<string, SQLInputValue> {
-	return {
+	const result: Record<string, SQLInputValue> = {
 		id: item.id,
 		type: item.type ?? null,
 		by: item.by ?? null,
@@ -20,9 +20,16 @@ function serialize(item: Item): Record<string, SQLInputValue> {
 		kids: item.kids ? JSON.stringify(item.kids) : null,
 		parts: item.parts ? JSON.stringify(item.parts) : null,
 		cached_at: item.cached_at?.getTime() ?? Date.now(),
-		top_position: item.top_position ?? -1,
 		first_cached_at: item.first_cached_at?.getTime() ?? Date.now()
 	};
+
+	if (item.top_position !== undefined && item.top_position !== null) {
+		result.top_position = item.top_position;
+	} else {
+		result.top_position = -1;
+	}
+
+	return result;
 }
 
 function deserialize(row: Record<string, SQLOutputValue | undefined>) {

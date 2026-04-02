@@ -21,22 +21,22 @@ BEGIN
     json_patch(
       '{}',
       json_object(
-        'text', CASE WHEN OLD.text IS NOT NEW.text THEN NEW.text END,
-        'dead', CASE WHEN OLD.dead IS NOT NEW.dead THEN NEW.dead END,
-        'score', CASE WHEN OLD.score IS NOT NEW.score THEN NEW.score END,
-        'title', CASE WHEN OLD.title IS NOT NEW.title THEN NEW.title END,
-        'deleted', CASE WHEN OLD.deleted IS NOT NEW.deleted THEN NEW.deleted END,
-        'top_position', CASE WHEN OLD.top_position IS NOT NEW.top_position THEN NEW.top_position END
+        'text', CASE WHEN OLD.text != NEW.text THEN NEW.text END,
+        'dead', CASE WHEN OLD.dead != NEW.dead THEN NEW.dead END,
+        'score', CASE WHEN OLD.score != NEW.score THEN NEW.score END,
+        'title', CASE WHEN OLD.title != NEW.title THEN NEW.title END,
+        'deleted', CASE WHEN OLD.deleted != NEW.deleted THEN NEW.deleted END,
+        'top_position', CASE WHEN OLD.top_position != NEW.top_position THEN NEW.top_position END
       )
     ),
     strftime('%s','now')
   WHERE
-    OLD.text IS NOT NEW.text OR
-    OLD.dead IS NOT NEW.dead OR
-    OLD.score IS NOT NEW.score OR
-    OLD.title IS NOT NEW.title OR
-    OLD.deleted IS NOT NEW.deleted OR
-    OLD.top_position IS NOT NEW.top_position;
+    OLD.text != NEW.text OR
+    OLD.dead != NEW.dead OR
+    OLD.score != NEW.score OR
+    OLD.title != NEW.title OR
+    OLD.deleted != NEW.deleted OR
+    OLD.top_position != NEW.top_position;
 END;
 
 -- Log initial insert
