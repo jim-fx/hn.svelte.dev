@@ -84,7 +84,10 @@ export function openDatabase(
 	logger.info('opening database', { IS_COMPRESSED, ZSTD_PATH, dbOpts, dbPath });
 
 	try {
-		const db = new DatabaseSync(dbPath) as ExtendedDatabase;
+		const db = new DatabaseSync(dbPath, {
+      defensive: dbOpts?.readonly,
+			readOnly: dbOpts?.readonly
+		}) as ExtendedDatabase;
 		db.path = dbPath.pathname;
 
 		const preparedStatements: Record<string, StatementSync> = {};
@@ -222,23 +225,23 @@ export function openDatabase(
 			}
 		};
 
-    if(dbOpts?.readonly !== true) {
-      if (IS_COMPRESSED) {
-        db.execSafe(`
+		if (dbOpts?.readonly !== true) {
+			if (IS_COMPRESSED) {
+				db.execSafe(`
           PRAGMA journal_mode = DELETE;
           PRAGMA cache_size = -102400;
           PRAGMA temp_store = MEMORY;
         `);
-      } else {
-        db.execSafe(`
+			} else {
+				db.execSafe(`
           PRAGMA journal_mode = WAL;
           PRAGMA synchronous = NORMAL;
           PRAGMA temp_store = MEMORY;
           PRAGMA mmap_size = 268435456;
           PRAGMA auto_vacuum = INCREMENTAL;
         `);
-      }
-    }
+			}
+		}
 
 		return db;
 	} catch (e) {
