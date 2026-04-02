@@ -1,8 +1,27 @@
 <script lang="ts">
 	import Comment from '$lib/Comment.svelte';
-	import { formatDuration } from '$lib/format';
+	import { formatDuration, formatAge } from '$lib/format';
 	import { isStale, getItemStaleThreshold } from '$lib/hn/utils';
-	const { data: item } = $props();
+	const { data } = $props();
+
+	const item = $derived(data.item);
+	const changes = $derived(data.changes ?? []);
+
+	const titleHistory = $derived(
+		changes.filter((c) => c.fields.title).map((c) => ({ value: c.fields.title, at: c.changed_at }))
+	);
+
+	const scoreHistory = $derived(
+		changes
+			.filter((c) => c.fields.score !== undefined)
+			.map((c) => ({ value: c.fields.score, at: c.changed_at }))
+	);
+
+	const positionHistory = $derived(
+		changes
+			.filter((c) => c.fields.top_position !== undefined)
+			.map((c) => ({ value: c.fields.top_position, at: c.changed_at }))
+	);
 
 	const secondsUntilStale = $derived(() => {
 		if (!item.cached_at) return null;
@@ -60,6 +79,53 @@
 		{/if}
 	</article>
 
+	{#if titleHistory.length || scoreHistory.length || positionHistory.length}
+		<details class="history">
+			<summary>Change history</summary>
+			<div class="history-grid">
+				{#if titleHistory.length}
+					<div class="history-section">
+						<h4>Titles</h4>
+						<ul>
+							{#each titleHistory as h}
+								<li>
+									{h.value}
+									<small>{formatAge(h.at.getTime())}</small>
+								</li>
+							{/each}
+						</ul>
+					</div>
+				{/if}
+				{#if scoreHistory.length}
+					<div class="history-section">
+						<h4>Scores</h4>
+						<ul>
+							{#each scoreHistory as h}
+								<li>
+									{h.value}
+									<small>{formatAge(h.at.getTime())}</small>
+								</li>
+							{/each}
+						</ul>
+					</div>
+				{/if}
+				{#if positionHistory.length}
+					<div class="history-section">
+						<h4>Positions</h4>
+						<ul>
+							{#each positionHistory as h}
+								<li>
+									#{h.value}
+									<small>{formatAge(h.at.getTime())}</small>
+								</li>
+							{/each}
+						</ul>
+					</div>
+				{/if}
+			</div>
+		</details>
+	{/if}
+
 	<div class="comments">
 		{#each item.comments as comment}
 			<Comment {comment} />
@@ -105,5 +171,47 @@
 
 	.comments > :global(.comment):first-child {
 		border-top: none;
+	}
+
+	.history {
+		margin: 0 -2em 2em -2em;
+		padding: 0 2em;
+	}
+
+	.history summary {
+		cursor: pointer;
+		color: var(--fg-light);
+		font-size: 0.8em;
+	}
+
+	.history-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 1em;
+		margin-top: 1em;
+	}
+
+	.history-section h4 {
+		font-size: 0.8em;
+		margin: 0 0 0.5em 0;
+		color: var(--fg-light);
+	}
+
+	.history-section ul {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		font-size: 0.75em;
+	}
+
+	.history-section li {
+		padding: 0.2em 0;
+		border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+	}
+
+	.history-section small {
+		color: var(--fg-light);
+		opacity: 0.7;
+		margin-left: 0.5em;
 	}
 </style>

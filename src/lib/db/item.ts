@@ -51,20 +51,16 @@ function deserialize(row: Record<string, SQLOutputValue | undefined>) {
 	return item as Item;
 }
 export function getItem(id: number) {
-	return db
-    .run('select_item', { deserialize })
-    .get({ id });
+	return db.run('select_item', { deserialize }).get({ id });
 }
 
 export function upsertItem(item: Item) {
 	if (!item) return;
-  return db.run('upsert_item').run(serialize(item));
+	return db.run('upsert_item').run(serialize(item));
 }
 
 export function getItemWithComments(id: number) {
-	const items = db
-    .run('select_item_with_comments', { deserialize })
-    .all({ id });
+	const items = db.run('select_item_with_comments', { deserialize }).all({ id });
 
 	if (!items || items.length === 0) return undefined;
 
@@ -125,4 +121,14 @@ export function getItemsWithComments(ids: number[]) {
 	}
 
 	return ids.map((id) => roots.get(id)).filter(Boolean);
+}
+
+export function getItemChanges(id: number, limit = 10) {
+	const rows = db.run('select_item_changes').all({ id, limit });
+
+	return rows.map((row) => ({
+		item_id: row.item_id as number,
+		changed_at: new Date((row.changed_at as number) * 1000),
+		fields: JSON.parse(row.fields as string)
+	}));
 }

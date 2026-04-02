@@ -1,10 +1,9 @@
 import * as hn from '$lib/hn';
+import * as db from '$lib/db';
 
 export async function load({ params, setHeaders }) {
 	const id = params.id;
 
-	// Cache item page for 5 minutes (items don't change often)
-	// Allow stale-while-revalidate for longer at edge
 	setHeaders({
 		'cache-control': 'public, max-age=300, stale-while-revalidate=300',
 		'cdn-cache-control': 'public, max-age=300, stale-while-revalidate=3600',
@@ -12,8 +11,8 @@ export async function load({ params, setHeaders }) {
 		'surrogate-control': 'public, max-age=600'
 	});
 
-	// Track dependency for cache invalidation
-	// depends(`hn:item:${id}`);
+	const item = await hn.fetchItemWithComments(+id);
+	const changes = db.getItemChanges(+id, 10);
 
-	return hn.fetchItemWithComments(+id);
+	return { item, changes };
 }
