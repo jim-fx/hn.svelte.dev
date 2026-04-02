@@ -83,7 +83,7 @@ export function openDatabase(
 	logger.info('opening database', { IS_COMPRESSED, ZSTD_PATH, dbOpts, dbPath });
 
 	try {
-		const db = new DatabaseSync(dbPath, {
+		const db = new DatabaseSync(dbPath.toString(), {
 			defensive: dbOpts?.readonly,
 			readOnly: dbOpts?.readonly
 		}) as ExtendedDatabase;
