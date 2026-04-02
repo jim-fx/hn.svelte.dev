@@ -55,8 +55,6 @@
 	<title>Cache Dashboard</title>
 </svelte:head>
 
-{@html `<script>console.log(${JSON.stringify(data)})</script>`}
-
 <h1>Cache Dashboard</h1>
 
 {#if stats}

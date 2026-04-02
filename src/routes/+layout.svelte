@@ -1,3 +1,5 @@
+<svelte:options immutable={true} />
+
 <script>
 	import { page, navigating } from '$app/state';
 	import Nav from '$lib/Nav.svelte';

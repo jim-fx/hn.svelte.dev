@@ -61,16 +61,23 @@ export async function fetchList(list: StoryType, page = 1, perPage = 30) {
 		}
 	}
 
-  missingIds.values().forEach((id) => fetchItemWithComments(id))
+	const missingIdsArray = [...missingIds.values()];
+	const batchSize = 5;
+	for (let i = 0; i < missingIdsArray.length; i += batchSize) {
+		const batch = missingIdsArray.slice(i, i + batchSize);
+		batch.forEach((id) => fetchItemWithComments(id));
+	}
 
 	const filtered = items.filter((item) => item && !item.dead && !item.deleted);
 	logger.info(`fetched list ${list} page ${page}: ${filtered.length} items`);
 
-  setTimeout(() => {
-    filtered.forEach(item => {
-      if(item && isStale(item)) fetchItemInBackground(item.id);
-    });
-  }, 2000)
+	setTimeout(() => {
+		const staleItems = filtered.filter((item): item is NonNullable<typeof item> => isStale(item));
+		for (let i = 0; i < staleItems.length; i += batchSize) {
+			const batch = staleItems.slice(i, i + batchSize);
+			batch.forEach((item) => fetchItemInBackground(item.id));
+		}
+	}, 2000);
 
 	return {
 		items: filtered,

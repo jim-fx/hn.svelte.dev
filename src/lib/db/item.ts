@@ -103,13 +103,18 @@ export function getItemsWithComments(ids: number[]) {
 
 	const byId = new Map<number, Item & { comments?: Item[] }>();
 	const roots = new Map<number, ItemWithComments>();
+	const rowById = new Map<number, Record<string, SQLOutputValue | undefined>>();
 
 	for (const item of items) {
 		byId.set(item.id, item);
 	}
 
+	for (const row of rows) {
+		rowById.set(row.id as number, row);
+	}
+
 	for (const item of items) {
-		const row = rows.find((r) => r.id === item.id); // or include root_id in deserialise
+		const row = rowById.get(item.id);
 		if (!row) continue;
 		const rootId = row.root_id as number;
 

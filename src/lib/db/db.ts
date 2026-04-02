@@ -1,5 +1,7 @@
 import { openDatabase, type ExtendedDatabase } from './utils';
 import migrations from './migrations/?all';
+import { createLogger } from '$lib/logger';
+import { formatDuration } from '$lib/format';
 
 let db: ExtendedDatabase;
 let isSetup = false;
@@ -21,6 +23,12 @@ db.execSafe(`ATTACH DATABASE '${statisticsDb.path}' AS statistics`);
 
 isSetup = true;
 
-const readOnlyDb = db;
+const readonlyLogger = createLogger('db:hn.sqlite:ro' );
+const readOnlyDb = openDatabase("hn.sqlite", { readonly: true, queryCallback: (s) => {
+  readonlyLogger.debug('query', {
+    sql: s.sql,
+    duration: formatDuration(s.duration)
+  });
+}})
 
 export { db, readOnlyDb };

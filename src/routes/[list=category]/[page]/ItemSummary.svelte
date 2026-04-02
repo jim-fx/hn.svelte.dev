@@ -51,7 +51,7 @@
 			|
 			<a href="/item/{item.id}">
 				{item.descendants}
-				{item.descentands === 1 ? 'comment' : 'comments'}
+				{item.descendants === 1 ? 'comment' : 'comments'}
 			</a>
 			{#if secondsUntilStale() !== null}
 				<span class="stale"> · next refresh in {formatDuration(secondsUntilStale()!)}</span>

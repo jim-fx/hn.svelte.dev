@@ -12,6 +12,7 @@
 	let searchType: string = $state(data.type ?? 'story');
 	// svelte-ignore state_referenced_locally
 	let searchInBody: boolean = $state(data.searchInBody ?? false);
+	let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 	$effect(() => {
 		if (!query) return;
@@ -19,16 +20,19 @@
 		const currentType = page.url.searchParams.get('type') ?? 'story';
 		const currentBody = page.url.searchParams.get('body') === '1';
 		if (currentQ === query && currentType === searchType && currentBody === searchInBody) return;
-		const u = new URL(page.url.toString());
-		u.searchParams.set('q', query);
-		u.searchParams.set('type', searchType);
-		if (searchInBody) {
-			u.searchParams.set('body', '1');
-		} else {
-			u.searchParams.delete('body');
-		}
-		// eslint-disable-next-line svelte/no-navigation-without-resolve
-		goto(u.toString());
+		if (debounceTimer) clearTimeout(debounceTimer);
+		debounceTimer = setTimeout(() => {
+			const u = new URL(page.url.toString());
+			u.searchParams.set('q', query);
+			u.searchParams.set('type', searchType);
+			if (searchInBody) {
+				u.searchParams.set('body', '1');
+			} else {
+				u.searchParams.delete('body');
+			}
+			// eslint-disable-next-line svelte/no-navigation-without-resolve
+			goto(u.toString());
+		}, 400);
 	});
 </script>
 

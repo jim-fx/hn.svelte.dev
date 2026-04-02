@@ -222,21 +222,23 @@ export function openDatabase(
 			}
 		};
 
-		if (IS_COMPRESSED) {
-			db.execSafe(`
-				PRAGMA journal_mode = DELETE;
-				PRAGMA cache_size = -102400;
-				PRAGMA temp_store = MEMORY;
-			`);
-		} else {
-			db.execSafe(`
-				PRAGMA journal_mode = WAL;
-				PRAGMA synchronous = NORMAL;
-				PRAGMA temp_store = MEMORY;
-				PRAGMA mmap_size = 268435456;
-				PRAGMA auto_vacuum = INCREMENTAL;
-			`);
-		}
+    if(dbOpts?.readonly !== true) {
+      if (IS_COMPRESSED) {
+        db.execSafe(`
+          PRAGMA journal_mode = DELETE;
+          PRAGMA cache_size = -102400;
+          PRAGMA temp_store = MEMORY;
+        `);
+      } else {
+        db.execSafe(`
+          PRAGMA journal_mode = WAL;
+          PRAGMA synchronous = NORMAL;
+          PRAGMA temp_store = MEMORY;
+          PRAGMA mmap_size = 268435456;
+          PRAGMA auto_vacuum = INCREMENTAL;
+        `);
+      }
+    }
 
 		return db;
 	} catch (e) {
